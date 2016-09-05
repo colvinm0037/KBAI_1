@@ -243,9 +243,6 @@ public class Agent {
     	// Use transformations on A to generate D by applying all transformations to A
     	Diagram D = diagramList.get("A");
     	
-    	// For each answer, compare D to each one
-    	// If no transformations, then find identical match
-    	
     	String chosenAnswer = "";
     	int lowestCount = Integer.MAX_VALUE;
     	
@@ -261,6 +258,7 @@ public class Agent {
     	return Integer.parseInt(chosenAnswer);    	
     }
     
+    // Build the transformations that occur between two diagrams
     private static List<Transformation> buildTransformations(Diagram d1, Diagram d2) {
     	
     	List<Transformation> transformations = new ArrayList<Transformation>();
@@ -270,6 +268,7 @@ public class Agent {
     	return transformations;    	
     }
     
+    // Compare two diagrams to see how similar they are
     private static int compare(Diagram d1, Diagram d2) {
     	
     	int transformationCount = 0;
