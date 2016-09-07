@@ -190,7 +190,7 @@ public class Agent {
     	// All logic in here is for a 2x2 matrix
     	
     	//problem.get
-    	if (!problem.getName().equals("Basic Problem B-01")) return -1;
+    	if (!(problem.getName().equals("Basic Problem B-01") || problem.getName().equals("Basic Problem B-02"))) return -1;
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
     	HashMap<String, Diagram> diagramList = new HashMap<String, Diagram>();
@@ -242,19 +242,23 @@ public class Agent {
     	    	   	
     	// Use transformations on A to generate D by applying all transformations to A
     	Diagram D = diagramList.get("A");
+    	D.setName("D");
     	
+    	// Compare D to all of the available solutions
     	String chosenAnswer = "";
     	int lowestCount = Integer.MAX_VALUE;
     	
     	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
-    		int transformationCount = compare(D, diagramList.get("1"));
+    		int transformationCount = compare(D, diagramList.get(figure));
     		
     		if (transformationCount < lowestCount) {
     			lowestCount = transformationCount;
     			chosenAnswer = figure;
+    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
     		}    		
     	}
     	
+    	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	return Integer.parseInt(chosenAnswer);    	
     }
     
@@ -271,10 +275,17 @@ public class Agent {
     // Compare two diagrams to see how similar they are
     private static int compare(Diagram d1, Diagram d2) {
     	
+    	System.out.println("Comparing " + d1.getName() + " with " + d2.getName());
+    	
     	int transformationCount = 0;
     	
-    	if (d1.isIdenticalMatch(d2)) return transformationCount;
+    	if (d1.isIdenticalMatch(d2)) {
+    		
+    	} else {
+    		transformationCount = 2;
+    	}
     	
+    	System.out.println("Returning transformationCount: " + transformationCount);
     	return transformationCount;
     }
 }
