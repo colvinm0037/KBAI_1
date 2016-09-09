@@ -36,6 +36,23 @@ public class Agent {
         
     }
     
+    public enum Shapes {
+    	
+    	NONE,
+    	SQUARE,
+    	CIRCLE,
+    	TRIANGLE,
+    	RIGHT_TRIANGLE,
+    	PACMAN,
+    	DIAMOND,
+    	PENTAGON,
+    	HEXAGON,
+    	OCTAGON,
+    	HEART,
+    	STAR
+    	
+    }
+    
     public class Pixel {
     	
     	public Pixel (int x, int y) {
@@ -67,13 +84,21 @@ public class Agent {
     	boolean isStriped;
     	int height = 0;
     	int width = 0;
-            	
+        Shapes shape = Shapes.NONE;    	
+    	
     	Pixel topMostPixel = new Pixel(0, 0);
     	Pixel bottomMostPixel = new Pixel(0, 183);
     	Pixel leftMostPixel = new Pixel(183, 0);
     	Pixel rightMostPixel = new Pixel(0, 0);
     	
-    	public boolean isHollow() {
+    	
+    	public Shapes getShape() {
+			return shape;
+		}
+		public void setShape(Shapes square) {
+			this.shape = square;
+		}
+		public boolean isHollow() {
 			return isHollow;
 		}
 		public void setHollow(boolean isHollow) {
@@ -218,12 +243,6 @@ public class Agent {
         			int thisPixel = figureAImage.getRGB(i,j);        		
         			if (thisPixel != -1) {
         				diagram.getMatrix()[i][j] = true;
-        				
-//        				if (j <= diagram.getBottomMostPixel().getY()) diagram.setBottomMostPixel(new Pixel(i, j));
-//        				if (j >= diagram.getTopMostPixel().getY()) diagram.setTopMostPixel(new Pixel(i, j));
-//        				if (i <= diagram.getLeftMostPixel().getX()) diagram.setLeftMostPixel(new Pixel(i, j));
-//        				if (i >= diagram.getRightMostPixel().getX()) diagram.setRightMostPixel(new Pixel(i, j));
-        				        				
         			}		
         		}	
         	}
@@ -235,6 +254,65 @@ public class Agent {
     		diagramList.put(diagram.getName(), diagram);
     	}
     	    	   	
+    	// TODO: Build the shapes in each diagram
+    	
+    	// Assuming one shape in each diagram
+    	// Build that shape, determine what type of shape it is, find its size and center
+    	// Add the shape object to its diagram
+    	
+    	for (String name : Arrays.asList("A", "B", "C")) {
+    		
+    		System.out.println("Building the shape in Diagram " + name);
+    		Diagram diagram = diagramList.get(name);
+    		Shape shape = new Shape();
+    		
+    		for (int i = 0; i < 184; i++) {
+    			for (int j = 0; j < 184; j++) {
+    				
+    				if (diagram.getMatrix()[i][j]) {
+	    				
+	    				if (j < shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
+	    				if (j > shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
+	    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
+	    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
+    				}
+    				
+    				// TODO: Log the pixels
+    				System.out.println("TopMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
+    			}
+    		}
+			
+    		// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
+    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() ) {
+    			
+    			System.out.println("Shape is SQUARE");
+    			shape.setShape(Shapes.SQUARE);
+    		}
+    		
+    		// SQUARE and CIRCLE Would be the same with my logic
+    		// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
+    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() ) {
+    			
+    			System.out.println("Shape is SQUARE");
+    			shape.setShape(Shapes.SQUARE);
+    		}
+			        				
+    		
+    		
+    	}
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
     	// Build up list of transformations 
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("B")));
