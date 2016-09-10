@@ -24,6 +24,8 @@ import javax.imageio.ImageIO;
  * 
  */
 public class Agent {
+	
+	private static int DELTA = 3;
     /**
      * The default constructor for your Agent. Make sure to execute any
      * processing necessary before your Agent starts solving problems here.
@@ -86,8 +88,10 @@ public class Agent {
     	int width = 0;
         Shapes shape = Shapes.NONE;    	
     	
-    	Pixel topMostPixel = new Pixel(0, 0);
-    	Pixel bottomMostPixel = new Pixel(0, 183);
+        // Top left is 0,0
+        // Bottom right is 183, 183
+    	Pixel topMostPixel = new Pixel(0, 183);
+    	Pixel bottomMostPixel = new Pixel(0, 0);
     	Pixel leftMostPixel = new Pixel(183, 0);
     	Pixel rightMostPixel = new Pixel(0, 0);
     	
@@ -215,7 +219,12 @@ public class Agent {
     	// All logic in here is for a 2x2 matrix
     	
     	//problem.get
-    	if (!(problem.getName().equals("Basic Problem B-01") || problem.getName().equals("Basic Problem B-02"))) return -1;
+    	if (!(
+    			//problem.getName().equals("Basic Problem B-01") 
+    			//problem.getName().equals("Basic Problem B-02")  
+    			  problem.getName().equals("Basic Problem B-03") 
+    			)) return -1;
+    	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
     	HashMap<String, Diagram> diagramList = new HashMap<String, Diagram>();
@@ -224,6 +233,8 @@ public class Agent {
     	// Look at every figure in this problem
     	for(String figureName : problem.getFigures().keySet()) {
 
+    		System.out.println(figureName);
+    		
     		RavensFigure figure = problem.getFigures().get(figureName);
     		
     		// Create a new diagram object to represent this figure
@@ -237,13 +248,17 @@ public class Agent {
         	} catch(Exception ex) {}
 
         	// Look at every pixel to build the 2d array and add it to the diagram object
-        	for(int i = 0 ; i < figureAImage.getWidth() ; i++) {
-        		for(int j = 0 ; j < figureAImage.getHeight() ; j++) {
+        	for(int i = 0; i < figureAImage.getWidth(); i++) {
+        		//System.out.println();
+        		for(int j = 0; j < figureAImage.getHeight(); j++) {
         		
-        			int thisPixel = figureAImage.getRGB(i,j);        		
+        			int thisPixel = figureAImage.getRGB(j,i);        		
         			if (thisPixel != -1) {
-        				diagram.getMatrix()[i][j] = true;
-        			}		
+        				//System.out.print("X");
+        				diagram.getMatrix()[j][i] = true;
+        			} else {
+        				//System.out.print("_");
+        			}
         		}	
         	}
         	
@@ -266,40 +281,106 @@ public class Agent {
     		Diagram diagram = diagramList.get(name);
     		Shape shape = new Shape();
     		
-    		for (int i = 0; i < 184; i++) {
-    			for (int j = 0; j < 184; j++) {
+    		// When looping through pixels we start at top left and work right and down
+    		for (int j = 0; j < 184; j++) {
+    			System.out.println();
+    			
+    			for (int i = 0; i < 184; i++) {
     				
     				if (diagram.getMatrix()[i][j]) {
-	    				
-	    				if (j < shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
-	    				if (j > shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
+	    				System.out.print("X");
+	    				if (j > shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
+	    				if (j < shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
 	    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
 	    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
+	    				
+    				} else {
+    					System.out.print("_");
     				}
-    				
-    				// TODO: Log the pixels
-    				System.out.println("TopMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
     			}
     		}
+    		
+    		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
+			System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
+			System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
+			System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
+			
+			
+			
+//			TopMost: (28, 155)
+//			BottomMost: (28, 28)
+			
+//			LeftMost: (28, 28)
+//			RightMost: (155, 28)
+//			Shape is SQUARE
 			
     		// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
+			// And top right is neabled
     		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() ) {
+    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
+    				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
     			
     			System.out.println("Shape is SQUARE");
     			shape.setShape(Shapes.SQUARE);
     		}
     		
-    		// SQUARE and CIRCLE Would be the same with my logic
-    		// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
-    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() ) {
-    			
-    			System.out.println("Shape is SQUARE");
-    			shape.setShape(Shapes.SQUARE);
+    		// CIRCLE
+    		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
+    				&& compareVals(shape.getLeftMostPixel().getY(), shape.getRightMostPixel().getY())  
+    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
+    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()] 
+    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()] 
+    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+
+    			System.out.println("Shape is Circle");
+    			shape.setShape(Shapes.CIRCLE);
     		}
-			        				
+    			
+    		// x
+    		// xx
+    		// xxx
+    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+    				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+    			
+    			System.out.println("Shape is BLTriange");
+    			shape.setShape(Shapes.SQUARE);
+    		}       				
+
+    		//   x
+    		//  xx
+    		// xxx
+    		if (shape.getTopMostPixel().getX() == shape.getRightMostPixel().getX() 
+    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
+    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+    			
+    			System.out.println("Shape is BRTriangle");
+    			shape.setShape(Shapes.SQUARE);
+    		}     
     		
+    		// xxx
+    		// xx
+    		// x
+			// And top right is neabled
+    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+    				&& shape.getRightMostPixel().getY() == shape.getTopMostPixel().getY() 
+    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+    			
+    			System.out.println("Shape is TLTriange");
+    			shape.setShape(Shapes.SQUARE);
+    		}     
+    		
+    		// xxx
+    		//  xx
+    		//   x
+			// And top right is neabled
+    		if (shape.getTopMostPixel().getX() == shape.getLeftMostPixel().getX() 
+    				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+    			
+    			System.out.println("Shape is TRTriangle");
+    			shape.setShape(Shapes.SQUARE);
+    		}     
     		
     	}
     	
@@ -365,5 +446,15 @@ public class Agent {
     	
     	System.out.println("Returning transformationCount: " + transformationCount);
     	return transformationCount;
+    }
+    
+    private static boolean compareVals(int a, int b) {
+    	System.out.println("Comparing: " + a + ", " + b);
+    	if ( (a == b) || (Math.abs(a - b) <= DELTA)) {
+    		System.out.println("returning true");
+    		return true;
+    	}
+    	System.out.println("returning false");
+    	return false;
     }
 }
