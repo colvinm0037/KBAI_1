@@ -41,10 +41,14 @@ public class Agent {
     public enum Shapes {
     	
     	NONE,
+    	UNKNOWN,
     	SQUARE,
     	CIRCLE,
     	TRIANGLE,
-    	RIGHT_TRIANGLE,
+    	TOPLEFT_TRIANGLE,
+    	TOPRIGHT_TRIANGLE,
+    	BOTTOMLEFT_TRIANLGE,
+    	BOTTOMRIGHT_TRIANGLE,
     	PACMAN,
     	DIAMOND,
     	PENTAGON,
@@ -53,6 +57,26 @@ public class Agent {
     	HEART,
     	STAR
     	
+    }
+    
+    public enum Textures {
+    	HOLLOW,
+    	SOLID,
+    	STRIPED
+    }
+    
+    public enum Sizes {
+    	SMALL,
+    	MEDIUM,
+    	LARGE
+    }
+    
+    public enum Transformations {
+    	NONE,
+    	SIZE,
+    	REGION,
+    	ROTATION,
+    	TEXTURE
     }
     
     public class Pixel {
@@ -75,7 +99,10 @@ public class Agent {
     
     public class Transformation {
     	
-    	
+    	// TODO: Need a way of building a list of Transformations
+    	// Need to be able to say a Shape transformed from a square to a circle
+    	// Need to be able to say a Shape had a property changed, went from small to medium
+    	// Rotate, Change size, change texture, isDeleted, isCreated, changedRegion
     	
     }
     
@@ -86,7 +113,10 @@ public class Agent {
     	boolean isStriped;
     	int height = 0;
     	int width = 0;
+    	int region = 0;
         Shapes shape = Shapes.NONE;    	
+    	Textures texture = Textures.HOLLOW;
+        Sizes size = Sizes.SMALL;
     	
         // Top left is 0,0
         // Bottom right is 183, 183
@@ -94,6 +124,7 @@ public class Agent {
     	Pixel bottomMostPixel = new Pixel(0, 0);
     	Pixel leftMostPixel = new Pixel(183, 0);
     	Pixel rightMostPixel = new Pixel(0, 0);
+    	Pixel center = new Pixel(0,0);
     	
     	
     	public Shapes getShape() {
@@ -156,6 +187,31 @@ public class Agent {
 		public void setRightMostPixel(Pixel rightMostPixel) {
 			this.rightMostPixel = rightMostPixel;
 		}
+		public Pixel getCenter() {
+			return center;
+		}
+		public void setCenter(Pixel center) {
+			this.center = center;
+		}
+		public int getRegion() {
+			return region;
+		}
+		public void setRegion(int region) {
+			this.region = region;
+		}
+		public Textures getTexture() {
+			return texture;
+		}
+		public void setTexture(Textures texture) {
+			this.texture = texture;
+		}
+		public Sizes getSize() {
+			return size;
+		}
+		public void setSize(Sizes size) {
+			this.size = size;
+		}
+		
     }
     
     public class Diagram {
@@ -222,13 +278,87 @@ public class Agent {
     	if (!(
     			//problem.getName().equals("Basic Problem B-01") 
     			//problem.getName().equals("Basic Problem B-02")  
-    			  problem.getName().equals("Basic Problem B-03") 
+    			  problem.getName().equals("Basic Problem B-01") 
     			)) return -1;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
-    	HashMap<String, Diagram> diagramList = new HashMap<String, Diagram>();
+    	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
+    	    	   	
+    	// TODO: Build the shapes in each diagram
     	
+    	// Assuming one shape in each diagram
+    	// Build that shape, determine what type of shape it is, find its size and center
+    	// Add the shape object to its diagram
+    	
+    	for (String name : Arrays.asList("A", "B", "C", "1", "2", "3", "4", "5", "6")) {
+    		
+    		System.out.println("Building the shape in Diagram " + name);
+    		Diagram diagram = diagramList.get(name);
+    		List<Shape> shapeList = new ArrayList<Shape>();
+    		
+    		Shape shape = new Shape();
+    		
+    		// When looping through pixels we start at top left and work right and down
+    		for (int j = 0; j < 184; j++) {
+    			System.out.println();
+    			
+    			for (int i = 0; i < 184; i++) {
+    				
+    				if (diagram.getMatrix()[i][j]) {
+	    				System.out.print("X");
+	    				if (j > shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
+	    				if (j < shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
+	    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
+	    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
+	    				
+    				} else {
+    					System.out.print("_");
+    				}
+    			}
+    		}
+    		
+    		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
+			System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
+			System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
+			System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
+
+			buildShape(diagram, shape);
+			shapeList.add(shape);
+			diagram.setShapeList(shapeList);
+    	}
+    	
+    	
+    	// Build up list of transformations 
+    	List<Transformation> transformations = new ArrayList<Transformation>();
+    	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("B")));
+    	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("C")));
+    	    	   	
+    	// Use transformations on A to generate D by applying all transformations to A
+    	Diagram D = diagramList.get("A");
+    	D.setName("D");
+    	
+    	// Compare D to all of the available solutions
+    	String chosenAnswer = "";
+    	int lowestCount = Integer.MAX_VALUE;
+    	
+    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
+    		int transformationCount = compare(D, diagramList.get(figure));
+    		
+    		if (transformationCount < lowestCount) {
+    			lowestCount = transformationCount;
+    			chosenAnswer = figure;
+    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+    		}    		
+    	}
+    	
+    	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
+    	return Integer.parseInt(chosenAnswer);    	
+    }
+
+	private HashMap<String, Diagram> buildDiagramList(RavensProblem problem) {
+		
+		HashMap<String, Diagram> diagramList = new HashMap<String, Diagram>();
     	
     	// Look at every figure in this problem
     	for(String figureName : problem.getFigures().keySet()) {
@@ -262,177 +392,179 @@ public class Agent {
         		}	
         	}
         	
-//        	diagram.setHeight(diagram.getTopMostPixel().getY() - diagram.getBottomMostPixel().getY());
-//        	diagram.setWidth(diagram.getRightMostPixel().getX() - diagram.getLeftMostPixel().getX());
-        	
         	System.out.println("Adding diagram: " + diagram.getName());
     		diagramList.put(diagram.getName(), diagram);
     	}
-    	    	   	
-    	// TODO: Build the shapes in each diagram
-    	
-    	// Assuming one shape in each diagram
-    	// Build that shape, determine what type of shape it is, find its size and center
-    	// Add the shape object to its diagram
-    	
-    	for (String name : Arrays.asList("A", "B", "C")) {
-    		
-    		System.out.println("Building the shape in Diagram " + name);
-    		Diagram diagram = diagramList.get(name);
-    		Shape shape = new Shape();
-    		
-    		// When looping through pixels we start at top left and work right and down
-    		for (int j = 0; j < 184; j++) {
-    			System.out.println();
-    			
-    			for (int i = 0; i < 184; i++) {
-    				
-    				if (diagram.getMatrix()[i][j]) {
-	    				System.out.print("X");
-	    				if (j > shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
-	    				if (j < shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
-	    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
-	    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
-	    				
-    				} else {
-    					System.out.print("_");
-    				}
-    			}
-    		}
-    		
-    		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
-			System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
-			System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
-			System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
-			
-			
-			
-//			TopMost: (28, 155)
-//			BottomMost: (28, 28)
-			
-//			LeftMost: (28, 28)
-//			RightMost: (155, 28)
-//			Shape is SQUARE
-			
-    		// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
-			// And top right is neabled
-    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
-    				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-    			
-    			System.out.println("Shape is SQUARE");
-    			shape.setShape(Shapes.SQUARE);
-    		}
-    		
-    		// CIRCLE
-    		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
-    				&& compareVals(shape.getLeftMostPixel().getY(), shape.getRightMostPixel().getY())  
-    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
-    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()] 
-    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()] 
-    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
-
-    			System.out.println("Shape is Circle");
-    			shape.setShape(Shapes.CIRCLE);
-    		}
-    			
-    		// x
-    		// xx
-    		// xxx
-    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-    				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
-    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-    			
-    			System.out.println("Shape is BLTriange");
-    			shape.setShape(Shapes.SQUARE);
-    		}       				
-
-    		//   x
-    		//  xx
-    		// xxx
-    		if (shape.getTopMostPixel().getX() == shape.getRightMostPixel().getX() 
-    				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
-    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-    			
-    			System.out.println("Shape is BRTriangle");
-    			shape.setShape(Shapes.SQUARE);
-    		}     
-    		
-    		// xxx
-    		// xx
-    		// x
-			// And top right is neabled
-    		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-    				&& shape.getRightMostPixel().getY() == shape.getTopMostPixel().getY() 
-    				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
-    			
-    			System.out.println("Shape is TLTriange");
-    			shape.setShape(Shapes.SQUARE);
-    		}     
-    		
-    		// xxx
-    		//  xx
-    		//   x
-			// And top right is neabled
-    		if (shape.getTopMostPixel().getX() == shape.getLeftMostPixel().getX() 
-    				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
-    				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
-    			
-    			System.out.println("Shape is TRTriangle");
-    			shape.setShape(Shapes.SQUARE);
-    		}     
-    		
-    	}
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	// Build up list of transformations 
-    	List<Transformation> transformations = new ArrayList<Transformation>();
-    	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("B")));
-    	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("C")));
-    	    	   	
-    	// Use transformations on A to generate D by applying all transformations to A
-    	Diagram D = diagramList.get("A");
-    	D.setName("D");
-    	
-    	// Compare D to all of the available solutions
-    	String chosenAnswer = "";
-    	int lowestCount = Integer.MAX_VALUE;
-    	
-    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
-    		int transformationCount = compare(D, diagramList.get(figure));
-    		
-    		if (transformationCount < lowestCount) {
-    			lowestCount = transformationCount;
-    			chosenAnswer = figure;
-    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
-    		}    		
-    	}
-    	
-    	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
-    	return Integer.parseInt(chosenAnswer);    	
-    }
+		return diagramList;
+	}
     
     // Build the transformations that occur between two diagrams
     private static List<Transformation> buildTransformations(Diagram d1, Diagram d2) {
     	
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	
-    	if (d1.isIdenticalMatch(d2)) return transformations;
+    	if (d1.isIdenticalMatch(d2)) {
+    		System.out.println("These two diagrams are identical, returning empty transformation list");
+    		return transformations;
+    	}
+    	
+    	// Compare the shape in d1 with the shape in d2
+    	Shape s1 = d1.getShapeList().get(0);
+    	Shape s2 = d2.getShapeList().get(0);
+    	
+    	// TODO: Once we have multiple shapes in each diagram, then need a way to map shapes in d1 with shapes in d2
+    	
+    	if (s1.getShape() == s2.getShape()) {
+    		
+    		// Compare region, size, texture
+    		if (s1.getRegion() != s2.getRegion()) {
+    			// Create new Transformation, of type region
+    		}
+    		
+    		if (s1.getTexture() != s2.getTexture()) {
+    			// Create new Transformation, of type texture
+    		}
+    		
+    		if (s1.getSize() != s2.getSize()) {
+    			// Create new Transformation, of type size
+    		}
+    		
+    	} else {
+    		System.out.println("The shapes are different");
+    		
+    	}
     	
     	return transformations;    	
     }
     
+    private Shape buildShape(Diagram diagram, Shape shape) {
+    	
+    	shape.setShape(discoverShapeType(diagram, shape));
+    	shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
+    	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
+    	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
+    	shape.setRegion(findRegion(shape));
+    	
+    	return shape;
+    }
+    
+    private int findRegion(Shape shape) {
+    	
+    	//012
+    	//345
+    	//678
+    	int region = 0;
+    	
+    	if (shape.getCenter().getY() >= 122) {
+    		region += 6;
+    	} else if (shape.getCenter().getY() >= 61) {
+    		region += 3;
+    	}
+    	
+    	if (shape.getCenter().getX() >= 122) {
+    		region += 2;
+    	} else if (shape.getCenter().getX() >= 61) {
+    		region += 1;
+    	}
+    	
+    	return region;
+    }
+    
+    // Look at our diagram, assuming only one shape is in the diagram, try to classify it as a specific shape
+    private Shapes discoverShapeType(Diagram diagram, Shape shape) {
+    	
+    	// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
+		// And top right is neabled
+		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
+				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+			
+			System.out.println("Shape is SQUARE");
+			return Shapes.SQUARE;
+		}
+		
+		// CIRCLE
+		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
+				&& compareVals(shape.getLeftMostPixel().getY(), shape.getRightMostPixel().getY())  
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()] 
+				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()] 
+				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+
+			System.out.println("Shape is Circle");
+			return Shapes.CIRCLE;
+		}
+			
+		// x
+		// xx
+		// xxx
+		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+			
+			System.out.println("Shape is BLTriange");
+			return Shapes.BOTTOMLEFT_TRIANLGE;
+		}       				
+
+		//   x
+		//  xx
+		// xxx
+		if (shape.getTopMostPixel().getX() == shape.getRightMostPixel().getX() 
+				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
+				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+			
+			System.out.println("Shape is BRTriangle");
+			return Shapes.BOTTOMRIGHT_TRIANGLE;
+		}     
+		
+		// xxx
+		// xx
+		// x
+		// And top right is neabled
+		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+				&& shape.getRightMostPixel().getY() == shape.getTopMostPixel().getY() 
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+			
+			System.out.println("Shape is TLTriange");
+			return Shapes.TOPLEFT_TRIANGLE;
+		}     
+		
+		// xxx
+		//  xx
+		//   x
+		// And top right is enabled
+		if (shape.getTopMostPixel().getX() == shape.getLeftMostPixel().getX() 
+				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+			
+			System.out.println("Shape is TRTriangle");
+			return Shapes.TOPRIGHT_TRIANGLE;
+		}     
+		
+		//   x
+		//  xxx
+		// xxxxx
+		if (compareVals(shape.getBottomMostPixel().getX(), shape.getLeftMostPixel().getX()) 
+				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY()) 
+				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+			
+			System.out.println("Shape is Equalatiral Triangle");
+			return Shapes.TRIANGLE;
+		}
+    	
+		// TODO: Logic for other shapes, Heart, Start, 
+		
+		// TODO: Is the shape hollow or solid or striped?
+		
+		System.out.println("Unknown Shape");
+    	return Shapes.UNKNOWN;
+    }
+    
     // Compare two diagrams to see how similar they are
     private static int compare(Diagram d1, Diagram d2) {
+    	
+    	// TODO: I can probably delete this method
     	
     	System.out.println("Comparing " + d1.getName() + " with " + d2.getName());
     	
