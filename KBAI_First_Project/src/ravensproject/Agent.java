@@ -45,10 +45,7 @@ public class Agent {
     	SQUARE,
     	CIRCLE,
     	TRIANGLE,
-    	TOPLEFT_TRIANGLE,
-    	TOPRIGHT_TRIANGLE,
-    	BOTTOMLEFT_TRIANLGE,
-    	BOTTOMRIGHT_TRIANGLE,
+    	RIGHT_TRIANGLE,
     	PACMAN,
     	DIAMOND,
     	PENTAGON,
@@ -104,6 +101,62 @@ public class Agent {
     	// Need to be able to say a Shape had a property changed, went from small to medium
     	// Rotate, Change size, change texture, isDeleted, isCreated, changedRegion
     	
+    	public Transformation(Sizes sizeA, Sizes sizeB) {
+    		this.transformation = Transformations.SIZE;
+    		this.sizeA = sizeA;
+    		this.sizeB = sizeB;
+    	}
+    	
+		public Transformation(int regionA, int regionB) {
+			this.transformation = Transformations.REGION;
+			this.regionA = regionA;
+			this.regionB = regionB;
+    	}
+		
+		public Transformation(int rotation) {
+			this.transformation = Transformations.ROTATION;
+			this.rotation = rotation;
+		}
+
+		public Transformation(Textures textureA, Textures textureB) {
+			this.transformation = Transformations.TEXTURE;
+			this.textureA = textureA;
+			this.textureB = textureB;
+		}
+    	
+		private Transformations transformation = Transformations.NONE;
+    	private Sizes sizeA;
+    	private Sizes sizeB;
+    	private int regionA;
+    	private int regionB;
+    	private int rotation;
+    	private Textures textureA;
+    	private Textures textureB;
+    	
+		public Transformations getTransformation() {
+			return transformation;
+		}
+		public Sizes getSizeA() {
+			return sizeA;
+		}
+		public Sizes getSizeB() {
+			return sizeB;
+		}
+		public int getRegionA() {
+			return regionA;
+		}
+		public int getRegionB() {
+			return regionB;
+		}
+		public Textures getTextureA() {
+			return textureA;
+		}
+		public Textures getTextureB() {
+			return textureB;
+		}
+		public int getRotation() {
+			return rotation;
+		}
     }
     
     public class Shape {
@@ -117,6 +170,7 @@ public class Agent {
         Shapes shape = Shapes.NONE;    	
     	Textures texture = Textures.HOLLOW;
         Sizes size = Sizes.SMALL;
+        int rotation = 0;
     	
         // Top left is 0,0
         // Bottom right is 183, 183
@@ -211,6 +265,12 @@ public class Agent {
 		public void setSize(Sizes size) {
 			this.size = size;
 		}
+		public int getRotation() {
+			return rotation;
+		}
+		public void setRotation(int rotation) {
+			this.rotation = rotation;
+		}
 		
     }
     
@@ -278,7 +338,7 @@ public class Agent {
     	if (!(
     			//problem.getName().equals("Basic Problem B-01") 
     			//problem.getName().equals("Basic Problem B-02")  
-    			  problem.getName().equals("Basic Problem B-01") 
+    			  problem.getName().equals("Basic Problem B-03") 
     			)) return -1;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
@@ -329,21 +389,27 @@ public class Agent {
     	}
     	
     	
-    	// Build up list of transformations 
+    	// Build up list of transformations between A->B and A->C
+    	System.out.println("Building the transformations from A to B and from B to C");
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("B")));
     	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("C")));
     	    	   	
+    	for (Transformation t : transformations) {
+    		System.out.println(t.getTransformation());
+    	}
+    	
     	// Use transformations on A to generate D by applying all transformations to A
-    	Diagram D = diagramList.get("A");
-    	D.setName("D");
+    	Diagram D = generateSolutionDiagram(diagramList.get("A"), transformations);
     	
     	// Compare D to all of the available solutions
     	String chosenAnswer = "";
     	int lowestCount = Integer.MAX_VALUE;
     	
+    	System.out.println("Comparing D to all of the available answers");
+    	
     	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
-    		int transformationCount = compare(D, diagramList.get(figure));
+    		int transformationCount = buildTransformations(D, diagramList.get(figure)).size();
     		
     		if (transformationCount < lowestCount) {
     			lowestCount = transformationCount;
@@ -353,7 +419,49 @@ public class Agent {
     	}
     	
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
+    	
+    	rotateDiagram(diagramList.get("3"), 90);
+    	
     	return Integer.parseInt(chosenAnswer);    	
+    }
+    
+    private Diagram generateSolutionDiagram(Diagram A, List<Transformation> transformations) {
+    	
+    	Diagram solution = new Diagram();
+    	List<Shape> shapeList = new ArrayList<Shape>();
+    	solution.setName("D");
+    	
+    	Shape shape = A.getShapeList().get(0);
+    	
+    	// TODO: Apply all of the transformations that we have onto this shape
+    	
+    	for (Transformation t : transformations) {
+    		
+    		// TODO: We are setting the rotation variable, but not actually rotating the image
+    		if (t.getTransformation() == Transformations.ROTATION) {
+    			shape.setRotation(t.getRotation());
+    		}
+    		
+    		if (t.getTransformation() == Transformations.REGION) {
+    			shape.setRegion(t.getRegionB());
+    		}
+
+			if (t.getTransformation() == Transformations.SIZE) {
+				shape.setSize(t.getSizeB());
+			}
+			
+			if (t.getTransformation() == Transformations.TEXTURE) {
+				shape.setTexture(t.getTextureB());
+			}
+    		
+    	}
+    	
+    	// TODO: Should actually set the pixel matrix for this diagram
+    	
+    	shapeList.add(shape);
+    	solution.setShapeList(shapeList);
+    	
+    	return solution;
     }
 
 	private HashMap<String, Diagram> buildDiagramList(RavensProblem problem) {
@@ -399,7 +507,7 @@ public class Agent {
 	}
     
     // Build the transformations that occur between two diagrams
-    private static List<Transformation> buildTransformations(Diagram d1, Diagram d2) {
+    private List<Transformation> buildTransformations(Diagram d1, Diagram d2) {
     	
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	
@@ -413,33 +521,114 @@ public class Agent {
     	Shape s2 = d2.getShapeList().get(0);
     	
     	// TODO: Once we have multiple shapes in each diagram, then need a way to map shapes in d1 with shapes in d2
-    	
+    	// TODO: I should set the list of transformations on the Shape object, so that when I have multiple shapes I
+    	// can say certain Transformations apply to specific shapes. IsDeleted is the only weird case
     	if (s1.getShape() == s2.getShape()) {
     		
-    		// Compare region, size, texture
+    		System.out.println("The shapes are the same, figuring out transformations");
+    		
     		if (s1.getRegion() != s2.getRegion()) {
-    			// Create new Transformation, of type region
+    			transformations.add(new Transformation(s1.getRegion(), s2.getRegion()));
     		}
     		
     		if (s1.getTexture() != s2.getTexture()) {
-    			// Create new Transformation, of type texture
+    			transformations.add(new Transformation(s1.getTexture(), s2.getTexture()));
     		}
     		
     		if (s1.getSize() != s2.getSize()) {
-    			// Create new Transformation, of type size
+    			transformations.add(new Transformation(s1.getSize(), s2.getSize()));
+    		}
+    		
+    		if (s1.getRotation() != s2.getRotation()) {
+    			if (s1.getRotation() < s2.getRotation()) {
+    				transformations.add(new Transformation(s2.getRotation() - s1.getRotation()));
+    			} else {
+    				transformations.add(new Transformation(360 - Math.abs(s1.getRotation() - s2.getRotation())));
+    			}
     		}
     		
     	} else {
     		System.out.println("The shapes are different");
+    		
     		
     	}
     	
     	return transformations;    	
     }
     
+    private void rotateDiagram(Diagram d, int rotation) {
+    	
+    	if (rotation % 90 != 0) {
+    		System.out.println("Can't rotate unless a factor of 90 degrees");
+    	}
+    	
+    	int degreesLeft = rotation;
+    	while (degreesLeft > 0) {
+    		
+    	}
+    	
+    }
+    
+    private void rotateDiagram90Degrees(Diagram d) {
+    	
+    	// TODO: Is it just a rotation of the first shape
+		
+    	System.out.println("Rotating " + d.getName());
+    	
+		// a b c	h d a
+		// d e f    i e b
+		// h i j    j f c
+		
+		// a: [0, 0] to [0. 2] [y, (width - 1) - x]
+		// b: [0. 1] to [1, 2]
+		// c: [0, 2] to [2, 2]
+		
+    	// d: [1, 0] to [0, 1] [y, width - 1) - x]
+		// e: [1. 1] to [1, 1]
+		// f: [1, 2] to [2, 1]
+    	
+    	// h: [2, 0] to [0, 0] [y, width - 1) - x]
+    	// i: [2. 1] to [1, 0]
+    	// j: [2, 2] to [2, 0]
+    	
+    	for (int y = 0; y < 184; y++) {
+			System.out.println("");
+			for (int x = 0; x < 184; x++) {
+				if (d.getMatrix()[x][y]) {
+					System.out.print("X");
+				} else {
+					System.out.print("_");
+				}
+			}
+		}
+    	
+    	boolean[][] rotatedMatrix = new boolean[184][184];
+    	
+		// rotate 90 degrees
+		for (int y = 0; y < 184; y++) {
+			for (int x = 0; x < 184; x++) {
+				
+				if (d.getMatrix()[x][y]) {
+					rotatedMatrix[y][184 - 1 - x] = true;
+				}
+			}
+		}
+    	
+		for (int y = 0; y < 184; y++) {
+			System.out.println("");
+			for (int x = 0; x < 184; x++) {
+				if (rotatedMatrix[x][y]) {
+					System.out.print("X");
+				} else {
+					System.out.print("_");
+				}
+			}
+		}
+    }
+    
     private Shape buildShape(Diagram diagram, Shape shape) {
     	
-    	shape.setShape(discoverShapeType(diagram, shape));
+    	discoverShapeType(diagram, shape);
     	shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
@@ -471,7 +660,7 @@ public class Agent {
     }
     
     // Look at our diagram, assuming only one shape is in the diagram, try to classify it as a specific shape
-    private Shapes discoverShapeType(Diagram diagram, Shape shape) {
+    private Shape discoverShapeType(Diagram diagram, Shape shape) {
     	
     	// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
 		// And top right is neabled
@@ -480,7 +669,8 @@ public class Agent {
 				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is SQUARE");
-			return Shapes.SQUARE;
+			shape.setShape(Shapes.SQUARE);
+			return shape;
 		}
 		
 		// CIRCLE
@@ -492,41 +682,20 @@ public class Agent {
 				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 
 			System.out.println("Shape is Circle");
-			return Shapes.CIRCLE;
+			shape.setShape(Shapes.CIRCLE);
+			return shape;
 		}
 			
-		// x
-		// xx
-		// xxx
-		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-			
-			System.out.println("Shape is BLTriange");
-			return Shapes.BOTTOMLEFT_TRIANLGE;
-		}       				
-
-		//   x
+		//   x This is the default right triangle with rotation of zero
 		//  xx
 		// xxx
 		if (shape.getTopMostPixel().getX() == shape.getRightMostPixel().getX() 
 				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
 				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
-			System.out.println("Shape is BRTriangle");
-			return Shapes.BOTTOMRIGHT_TRIANGLE;
-		}     
-		
-		// xxx
-		// xx
-		// x
-		// And top right is neabled
-		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-				&& shape.getRightMostPixel().getY() == shape.getTopMostPixel().getY() 
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
-			
-			System.out.println("Shape is TLTriange");
-			return Shapes.TOPLEFT_TRIANGLE;
+			System.out.println("Shape is Right triangle with zero rotation");
+			shape.setShape(Shapes.RIGHT_TRIANGLE);
+			return shape;
 		}     
 		
 		// xxx
@@ -537,9 +706,40 @@ public class Agent {
 				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
 				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
-			System.out.println("Shape is TRTriangle");
-			return Shapes.TOPRIGHT_TRIANGLE;
+			System.out.println("Shape is Right triangle with 90 degree rotation");
+			shape.setShape(Shapes.RIGHT_TRIANGLE);
+			shape.setRotation(90);
 		}     
+		
+		// xxx
+		// xx
+		// x
+		// And top right is neabled
+		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+				&& shape.getRightMostPixel().getY() == shape.getTopMostPixel().getY() 
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+			
+			System.out.println("Shape is Right triangle with 180 degree rotation");
+			shape.setShape(Shapes.RIGHT_TRIANGLE);
+			shape.setRotation(180);
+			return shape;
+		}     
+		
+		// x
+		// xx
+		// xxx
+		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+			
+			System.out.println("Shape is Right triangle with 270 degree rotation");
+			shape.setShape(Shapes.RIGHT_TRIANGLE);
+			shape.setRotation(270);
+			return shape;
+		}       				
+	
+		
+
 		
 		//   x
 		//  xxx
@@ -550,7 +750,8 @@ public class Agent {
 				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is Equalatiral Triangle");
-			return Shapes.TRIANGLE;
+			shape.setShape(Shapes.TRIANGLE);
+			return shape;
 		}
     	
 		// TODO: Logic for other shapes, Heart, Start, 
@@ -558,27 +759,28 @@ public class Agent {
 		// TODO: Is the shape hollow or solid or striped?
 		
 		System.out.println("Unknown Shape");
-    	return Shapes.UNKNOWN;
+		shape.setShape(Shapes.UNKNOWN);
+    	return shape;
     }
     
     // Compare two diagrams to see how similar they are
-    private static int compare(Diagram d1, Diagram d2) {
-    	
-    	// TODO: I can probably delete this method
-    	
-    	System.out.println("Comparing " + d1.getName() + " with " + d2.getName());
-    	
-    	int transformationCount = 0;
-    	
-    	if (d1.isIdenticalMatch(d2)) {
-    		
-    	} else {
-    		transformationCount = 2;
-    	}
-    	
-    	System.out.println("Returning transformationCount: " + transformationCount);
-    	return transformationCount;
-    }
+//    private static int compare(Diagram d1, Diagram d2) {
+//    	
+//    	// TODO: I can probably delete this method
+//    	
+//    	System.out.println("Comparing " + d1.getName() + " with " + d2.getName());
+//    	
+//    	int transformationCount = 0;
+//    	
+//    	if (d1.isIdenticalMatch(d2)) {
+//    		
+//    	} else {
+//    		transformationCount = 2;
+//    	}
+//    	
+//    	System.out.println("Returning transformationCount: " + transformationCount);
+//    	return transformationCount;
+//    }
     
     private static boolean compareVals(int a, int b) {
     	System.out.println("Comparing: " + a + ", " + b);
