@@ -73,7 +73,9 @@ public class Agent {
     	SIZE,
     	REGION,
     	ROTATION,
-    	TEXTURE
+    	TEXTURE,
+    	ADDSHAPE,
+    	DELETESHAPE
     }
     
     public class Pixel {
@@ -123,6 +125,15 @@ public class Agent {
 			this.textureA = textureA;
 			this.textureB = textureB;
 		}
+		
+		public Transformation(boolean added, Shape shape) {
+			if (added) {
+				this.transformation = Transformations.ADDSHAPE;
+			} else {
+				this.transformation = Transformations.DELETESHAPE;
+			}
+			this.shape = shape;
+		}
     	
 		private Transformations transformation = Transformations.NONE;
     	private Sizes sizeA;
@@ -132,6 +143,7 @@ public class Agent {
     	private int rotation;
     	private Textures textureA;
     	private Textures textureB;
+    	private Shape shape;
     	
 		public Transformations getTransformation() {
 			return transformation;
@@ -156,6 +168,9 @@ public class Agent {
 		}
 		public int getRotation() {
 			return rotation;
+		}
+		public Shape getShape() {
+			return shape;
 		}
     }
     
@@ -333,6 +348,10 @@ public class Agent {
     public int Solve(RavensProblem problem) {
     	
     	// All logic in here is for a 2x2 matrix
+
+    	// TODO: Need to recognize multiple shapes
+    	// TODO: Rotation stuff is mostly written but not really implemented
+    	// TODO: Need to recognize if shapes are filled or not
     	
     	//problem.get
     	if (!(
@@ -361,19 +380,19 @@ public class Agent {
     		
     		// When looping through pixels we start at top left and work right and down
     		for (int j = 0; j < 184; j++) {
-    			System.out.println();
+    		//	System.out.println();
     			
     			for (int i = 0; i < 184; i++) {
     				
     				if (diagram.getMatrix()[i][j]) {
-	    				System.out.print("X");
+	    			//	System.out.print("X");
 	    				if (j > shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
 	    				if (j < shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
 	    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
 	    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
 	    				
     				} else {
-    					System.out.print("_");
+    					//System.out.print("_");
     				}
     			}
     		}
@@ -427,6 +446,8 @@ public class Agent {
     
     private Diagram generateSolutionDiagram(Diagram A, List<Transformation> transformations) {
     	
+    	System.out.println("Beginning generateSolution");
+    	
     	Diagram solution = new Diagram();
     	List<Shape> shapeList = new ArrayList<Shape>();
     	solution.setName("D");
@@ -453,14 +474,27 @@ public class Agent {
 			if (t.getTransformation() == Transformations.TEXTURE) {
 				shape.setTexture(t.getTextureB());
 			}
+			
+			if (t.getTransformation() == Transformations.ADDSHAPE) {
+				shapeList.add(t.getShape());
+    		}
+    	
+    		if (t.getTransformation() == Transformations.DELETESHAPE) {
+    			// TODO: Need to delete the shape
+    		}
     		
     	}
     	
     	// TODO: Should actually set the pixel matrix for this diagram
     	
+    	System.out.println("Done generating the shape in D");
+    	System.out.println("Shape: " + shape.getShape());
+    	System.out.println("Region: " + shape.getRegion());
+    	System.out.println("Size: " + shape.getSize());
+    	System.out.println("Rotation: " + shape.getRotation());
+    	
     	shapeList.add(shape);
     	solution.setShapeList(shapeList);
-    	
     	return solution;
     }
 
@@ -500,7 +534,7 @@ public class Agent {
         		}	
         	}
         	
-        	System.out.println("Adding diagram: " + diagram.getName());
+        	//System.out.println("Adding diagram: " + diagram.getName());
     		diagramList.put(diagram.getName(), diagram);
     	}
 		return diagramList;
@@ -508,6 +542,8 @@ public class Agent {
     
     // Build the transformations that occur between two diagrams
     private List<Transformation> buildTransformations(Diagram d1, Diagram d2) {
+    	
+    	System.out.println("Beginning buildTransformations, comparing " + d1.getName() + " with " + d2.getName());
     	
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	
@@ -549,10 +585,11 @@ public class Agent {
     		
     	} else {
     		System.out.println("The shapes are different");
-    		
-    		
+    		transformations.add(new Transformation(false, s1));
+    		transformations.add(new Transformation(true, s2));
     	}
     	
+    	System.out.println("Done building transformations, returning list of size: " + transformations.size());
     	return transformations;    	
     }
     
@@ -665,13 +702,16 @@ public class Agent {
     	// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
 		// And top right is neabled
 		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
-				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+				&& shape.getTopMostPixel().getY() == shape.getRightMostPixel().getY() 
+				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
 			System.out.println("Shape is SQUARE");
 			shape.setShape(Shapes.SQUARE);
 			return shape;
 		}
+		
+
+		
 		
 		// CIRCLE
 		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
@@ -689,8 +729,8 @@ public class Agent {
 		//   x This is the default right triangle with rotation of zero
 		//  xx
 		// xxx
-		if (shape.getTopMostPixel().getX() == shape.getRightMostPixel().getX() 
-				&& shape.getLeftMostPixel().getY() == shape.getBottomMostPixel().getY() 
+		if (compareVals(shape.getTopMostPixel().getX(), shape.getRightMostPixel().getX()) 
+				&& compareVals(shape.getLeftMostPixel().getY(), shape.getBottomMostPixel().getY()) 
 				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with zero rotation");
@@ -702,8 +742,8 @@ public class Agent {
 		//  xx
 		//   x
 		// And top right is enabled
-		if (shape.getTopMostPixel().getX() == shape.getLeftMostPixel().getX() 
-				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+		if (compareVals(shape.getTopMostPixel().getX(), shape.getLeftMostPixel().getX()) 
+				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY())
 				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with 90 degree rotation");
@@ -715,8 +755,8 @@ public class Agent {
 		// xx
 		// x
 		// And top right is neabled
-		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-				&& shape.getRightMostPixel().getY() == shape.getTopMostPixel().getY() 
+		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
+				&& compareVals(shape.getRightMostPixel().getY(), shape.getTopMostPixel().getY())
 				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with 180 degree rotation");
@@ -728,8 +768,8 @@ public class Agent {
 		// x
 		// xx
 		// xxx
-		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
-				&& shape.getRightMostPixel().getY() == shape.getBottomMostPixel().getY() 
+		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX())
+				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY())
 				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with 270 degree rotation");
@@ -738,7 +778,20 @@ public class Agent {
 			return shape;
 		}       				
 	
-		
+//    	Building the shape in Diagram B
+//    	TopMost: (28, 28)
+//    	BottomMost: (28, 155)
+//    	LeftMost: (28, 28)
+//    	RightMost: (155, 155)
+//    	returning true
+//    	Shape is Right triangle with 270 degree rotation
+//    	
+//    	Building the shape in Diagram 4
+//    	TopMost: (26, 26)
+//    	BottomMost: (26, 157)
+//    	LeftMost: (26, 26)
+//    	RightMost: (157, 154)
+//    	
 
 		
 		//   x
@@ -763,6 +816,18 @@ public class Agent {
     	return shape;
     }
     
+    private void determineShapeFill(Shape shape) {
+    	
+    	// for square and circle draw a line from left to right and top to bottom to see if all solid
+    	
+    	// triangles more complex
+    	
+    	// TODO: Don't worry about partially filled shapes for now
+    	
+    	
+    	
+    }
+    
     // Compare two diagrams to see how similar they are
 //    private static int compare(Diagram d1, Diagram d2) {
 //    	
@@ -783,12 +848,10 @@ public class Agent {
 //    }
     
     private static boolean compareVals(int a, int b) {
-    	System.out.println("Comparing: " + a + ", " + b);
     	if ( (a == b) || (Math.abs(a - b) <= DELTA)) {
     		System.out.println("returning true");
     		return true;
     	}
-    	System.out.println("returning false");
     	return false;
     }
 }
