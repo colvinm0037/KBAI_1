@@ -97,12 +97,7 @@ public class Agent {
     }
     
     public class Transformation {
-    	
-    	// TODO: Need a way of building a list of Transformations
-    	// Need to be able to say a Shape transformed from a square to a circle
-    	// Need to be able to say a Shape had a property changed, went from small to medium
-    	// Rotate, Change size, change texture, isDeleted, isCreated, changedRegion
-    	
+    	    	
     	public Transformation(Sizes sizeA, Sizes sizeB) {
     		this.transformation = Transformations.SIZE;
     		this.sizeA = sizeA;
@@ -330,8 +325,7 @@ public class Agent {
 		}
 		
     }
-       
-    
+         
     /**
      * The primary method for solving incoming Raven's Progressive Matrices.
      * For each problem, your Agent's Solve() method will be called. At the
@@ -670,6 +664,9 @@ public class Agent {
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
     	shape.setRegion(findRegion(shape));
+    	determineShapeFill(diagram, shape);
+    	
+    	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow());
     	
     	return shape;
     }
@@ -816,40 +813,156 @@ public class Agent {
     	return shape;
     }
     
-    private void determineShapeFill(Shape shape) {
+    private void determineShapeFill(Diagram diagram, Shape shape) {
     	
     	// for square and circle draw a line from left to right and top to bottom to see if all solid
     	
-    	// triangles more complex
+    	
+    	if (shape.getShape() == Shapes.SQUARE || shape.getShape() == Shapes.CIRCLE) {
+    		
+    		// Look at every pixel from left edge to right edge in middle line
+    		int yValue = shape.getBottomMostPixel().getY() - (shape.getHeight() / 2);
+    		for (int i = shape.getLeftMostPixel().getX(); i <= shape.getRightMostPixel().getX(); i++) {
+    			
+    			if (!diagram.getMatrix()[i][yValue]) {
+    				shape.setHollow(true);
+    				return;
+    			}
+    		}
+    		
+    		// Look at every pixel from top to bottom in middle line
+    		int xValue = shape.getRightMostPixel().getX() - (shape.getWidth() / 2);
+    		for (int i = shape.getTopMostPixel().getY(); i <= shape.getBottomMostPixel().getY(); i++) {
+    			
+    			if (!diagram.getMatrix()[xValue][i]) {
+    				shape.setHollow(true);
+    				return;
+    			}
+    		}
+    		
+    		shape.setSolid(true);
+    		return;
+    	}
+    	
+    	if (shape.getShape() == Shapes.RIGHT_TRIANGLE) {
+    	    determineFillForRightTriangle(diagram, shape);
+    	}
     	
     	// TODO: Don't worry about partially filled shapes for now
     	
+    }
+    
+    private void determineFillForRightTriangle(Diagram diagram, Shape shape) {
     	
+    	boolean solidVertical = false;
+    	boolean solidHorizontal = false;
+    	
+    	if (shape.getRotation() == 0) {
+    		solidVertical = checkVerticalTriangleLine(diagram, shape, true);
+			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, true);
+		} else if (shape.getRotation() == 90) {
+			solidVertical = checkVerticalTriangleLine(diagram, shape, false);
+			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, true);    			
+		} else if (shape.getRotation() == 180) {
+			solidVertical = checkVerticalTriangleLine(diagram, shape, false);
+			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, false);
+		} else if (shape.getRotation() == 270) {
+			solidVertical = checkVerticalTriangleLine(diagram, shape, true);
+			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, false);
+		}
+    	
+		System.out.println("vertical: " + solidVertical + ", horizontal: " + solidHorizontal);
+		
+    	if (solidVertical && solidHorizontal) {
+    		System.out.println("The triangle is SOLID");
+    		shape.setSolid(true);
+    	} else if (!solidVertical && !solidHorizontal) {
+    		System.out.println("The triangle is HOLLOW");
+    		shape.setHollow(true);
+    	} else {
+    		System.out.println("The triangle is STRIPED");
+    		shape.setStriped(true);
+    	}
     	
     }
     
-    // Compare two diagrams to see how similar they are
-//    private static int compare(Diagram d1, Diagram d2) {
-//    	
-//    	// TODO: I can probably delete this method
-//    	
-//    	System.out.println("Comparing " + d1.getName() + " with " + d2.getName());
-//    	
-//    	int transformationCount = 0;
-//    	
-//    	if (d1.isIdenticalMatch(d2)) {
-//    		
-//    	} else {
-//    		transformationCount = 2;
-//    	}
-//    	
-//    	System.out.println("Returning transformationCount: " + transformationCount);
-//    	return transformationCount;
-//    }
+    private boolean checkVerticalTriangleLine(Diagram diagram, Shape shape, boolean topToBottom) {
+    	
+    	boolean hitEdge = false;
+    	boolean isSolidLine = true;
+    	int xValue = shape.getRightMostPixel().getX() - (shape.getWidth() / 2);
+    	
+    	if (topToBottom) {
+			for (int i = shape.getTopMostPixel().getY(); i <= shape.getBottomMostPixel().getY(); i++) {		
+				if (!hitEdge) {
+					if (diagram.getMatrix()[xValue][i]) {
+						hitEdge = true;					
+					}
+					continue;
+				}
+				if (!diagram.getMatrix()[xValue][i]) {
+					isSolidLine = false;
+					break;
+				}
+			}
+    	} else {
+			for (int i = shape.getBottomMostPixel().getY(); i >= shape.getTopMostPixel().getY(); i--) {		
+				if (!hitEdge) {
+					if (diagram.getMatrix()[xValue][i]) {
+						hitEdge = true;					
+					}
+					continue;
+				}
+				if (!diagram.getMatrix()[xValue][i]) {
+					isSolidLine = false;
+					break;
+				}
+			}
+    	}
+		
+		return isSolidLine;
+    }
+    
+    private boolean checkHorizontalTriangleLine(Diagram diagram, Shape shape, boolean leftToRight) {
+    	
+	 	boolean hitEdge = false;
+    	boolean isSolidLine = true;
+    	int yValue = shape.getBottomMostPixel().getY() - (shape.getHeight() / 2);
+    	
+    	if (leftToRight) {
+			for (int i = shape.getLeftMostPixel().getX(); i <= shape.getRightMostPixel().getX(); i++) {					
+				if (!hitEdge) {
+					if (diagram.getMatrix()[i][yValue]) {
+						hitEdge = true;					
+					}
+					continue;
+				}
+				
+				if (!diagram.getMatrix()[i][yValue]) {
+					isSolidLine = false;
+					break;
+				}
+			}
+    	} else {
+			for (int i = shape.getRightMostPixel().getX(); i >= shape.getLeftMostPixel().getX(); i--) {				
+				if (!hitEdge) {
+					if (diagram.getMatrix()[i][yValue]) {
+						hitEdge = true;
+					}
+					continue;
+				}
+				if (!diagram.getMatrix()[i][yValue]) {
+					isSolidLine = false;
+					break;
+				}
+			}
+    	}
+		
+		return isSolidLine;
+    }
     
     private static boolean compareVals(int a, int b) {
     	if ( (a == b) || (Math.abs(a - b) <= DELTA)) {
-    		System.out.println("returning true");
     		return true;
     	}
     	return false;
