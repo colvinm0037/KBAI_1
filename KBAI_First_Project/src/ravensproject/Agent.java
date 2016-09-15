@@ -345,13 +345,12 @@ public class Agent {
 
     	// TODO: Need to recognize multiple shapes
     	// TODO: Rotation stuff is mostly written but not really implemented
-    	// TODO: Need to recognize if shapes are filled or not
     	
     	//problem.get
     	if (!(
     			//problem.getName().equals("Basic Problem B-01") 
     			//problem.getName().equals("Basic Problem B-02")  
-    			  problem.getName().equals("Basic Problem B-03") 
+    			  problem.getName().equals("Basic Problem B-11") 
     			)) return -1;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
@@ -363,6 +362,8 @@ public class Agent {
     	// Assuming one shape in each diagram
     	// Build that shape, determine what type of shape it is, find its size and center
     	// Add the shape object to its diagram
+    	
+
     	
     	for (String name : Arrays.asList("A", "B", "C", "1", "2", "3", "4", "5", "6")) {
     		
@@ -401,6 +402,10 @@ public class Agent {
 			diagram.setShapeList(shapeList);
     	}
     	
+    	System.out.println("Begin testing**************");
+    	discoverShapes(diagramList.get("A"));
+    	System.out.println("DONE TESTING*********");
+    	if (1 < 3) return 1;
     	
     	// Build up list of transformations between A->B and A->C
     	System.out.println("Building the transformations from A to B and from B to C");
@@ -437,6 +442,101 @@ public class Agent {
     	
     	return Integer.parseInt(chosenAnswer);    	
     }
+    
+    private void discoverShapes(Diagram masterDiagram) {
+    	
+    	boolean[][] checkedPixels = new boolean[184][184];
+    	
+    	boolean done = false;
+    	
+    	for (int j = 0; j < 184; j++) {
+    		for (int i = 0; i < 184; i++) {
+
+    			if (!checkedPixels[i][j]) {
+    				
+    				if (masterDiagram.getMatrix()[i][j]) {
+    					
+    					traverseShapeInMatrix(masterDiagram.getMatrix(), checkedPixels, new Pixel(i, j));
+    					//done = true;
+    					//break;
+    				}
+    			}
+    				
+    		}
+    		if (done) break;
+    	}
+    	
+    	
+    }
+    
+    private Diagram traverseShapeInMatrix(boolean[][] masterMatrix, boolean[][] checkedPixels, Pixel start) {
+    	
+    	System.out.println("Beginning traverseShapeInMatrix with starting pixel (" + start.getX() + ", " + start.getY() + ")");
+    	
+    	boolean[][] newShapeMatrix = new boolean[184][184];
+    	
+    	List<Pixel> recentPixels = new ArrayList<Pixel>();
+    	recentPixels.add(start);
+    	
+    	while (recentPixels.size() > 0) {
+    		
+    		List<Pixel> newPixelList = new ArrayList<Pixel>();
+    		
+    		for (Pixel p : recentPixels) {
+    			
+    			if (!checkedPixels[p.getX()][p.getY()]) {
+    				checkedPixels[p.getX()][p.getY()] = true;
+    			} else {
+    				continue;
+    			}
+    			
+    			if (masterMatrix[p.getX()][p.getY()]) {
+    				
+    				newShapeMatrix[p.getX()][p.getY()] = true;
+    				
+    				// Add left if not already checked
+    				if (p.getX() > 1 && !checkedPixels[p.getX() - 1][p.getY()]) {
+    					newPixelList.add(new Pixel(p.getX() - 1, p.getY()));
+    				}
+    				
+    				// Add right if not already checked
+    				if (p.getX() < 182 && !checkedPixels[p.getX() + 1][p.getY()]) {
+    					newPixelList.add(new Pixel(p.getX() + 1, p.getY()));
+    				}
+    				
+    				// Add below if not already checked
+    				if (p.getY() < 182 && !checkedPixels[p.getX()][p.getY() + 1]) {
+    					newPixelList.add(new Pixel(p.getX(), p.getY() + 1));
+    				}
+    				
+    				// Add above if not already checked
+    				if (p.getY() > 1 && !checkedPixels[p.getX()][p.getY() - 1]) {
+    					newPixelList.add(new Pixel(p.getX(), p.getY() - 1));
+    				}
+    				
+    			}
+    		}
+    		
+    		recentPixels.clear();
+    		recentPixels.addAll(newPixelList);
+    	}
+    	
+    	for (int j = 0; j < 184; j++) {
+    		System.out.println();
+    			
+    			for (int i = 0; i < 184; i++) {
+    				
+    				if (newShapeMatrix[i][j]) {
+	    				System.out.print("X");
+    				} else {
+    					System.out.print("_");
+    				}
+    			}
+    		}
+    	
+    	return null;
+    }
+    
     
     private Diagram generateSolutionDiagram(Diagram A, List<Transformation> transformations) {
     	
