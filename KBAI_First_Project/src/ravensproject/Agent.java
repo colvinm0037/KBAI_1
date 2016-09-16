@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -98,25 +99,29 @@ public class Agent {
     
     public class Transformation {
     	    	
-    	public Transformation(Sizes sizeA, Sizes sizeB) {
+    	public Transformation(int index, Sizes sizeA, Sizes sizeB) {
     		this.transformation = Transformations.SIZE;
+    		this.indexOfShape = index;
     		this.sizeA = sizeA;
     		this.sizeB = sizeB;
     	}
     	
-		public Transformation(int regionA, int regionB) {
+		public Transformation(int index, int regionA, int regionB) {
 			this.transformation = Transformations.REGION;
+			this.indexOfShape = index;
 			this.regionA = regionA;
 			this.regionB = regionB;
     	}
 		
-		public Transformation(int rotation) {
+		public Transformation(int index, int rotation) {
 			this.transformation = Transformations.ROTATION;
+			this.indexOfShape = index;
 			this.rotation = rotation;
 		}
 
-		public Transformation(Textures textureA, Textures textureB) {
+		public Transformation(int index, Textures textureA, Textures textureB) {
 			this.transformation = Transformations.TEXTURE;
+			this.indexOfShape = index;
 			this.textureA = textureA;
 			this.textureB = textureB;
 		}
@@ -131,6 +136,7 @@ public class Agent {
 		}
     	
 		private Transformations transformation = Transformations.NONE;
+		private int indexOfShape = -1;
     	private Sizes sizeA;
     	private Sizes sizeB;
     	private int regionA;
@@ -167,6 +173,9 @@ public class Agent {
 		public Shape getShape() {
 			return shape;
 		}
+		public int getIndexOfShape() {
+			return indexOfShape;
+		}
     }
     
     public class Shape {
@@ -181,7 +190,8 @@ public class Agent {
     	Textures texture = Textures.HOLLOW;
         Sizes size = Sizes.SMALL;
         int rotation = 0;
-    	
+    	boolean[][] shapeMatrix;
+        
         // Top left is 0,0
         // Bottom right is 183, 183
     	Pixel topMostPixel = new Pixel(0, 183);
@@ -281,7 +291,12 @@ public class Agent {
 		public void setRotation(int rotation) {
 			this.rotation = rotation;
 		}
-		
+		public boolean[][] getShapeMatrix() {
+			return shapeMatrix;
+		}
+		public void setShapeMatrix(boolean[][] shapeMatrix) {
+			this.shapeMatrix = shapeMatrix;
+		}
     }
     
     public class Diagram {
@@ -342,70 +357,60 @@ public class Agent {
     public int Solve(RavensProblem problem) {
     	
     	// All logic in here is for a 2x2 matrix
-
-    	// TODO: Need to recognize multiple shapes
-    	// TODO: Rotation stuff is mostly written but not really implemented
+    	System.out.println("Starting SOLVE");
     	
-    	//problem.get
-    	if (!(
-    			//problem.getName().equals("Basic Problem B-01") 
-    			//problem.getName().equals("Basic Problem B-02")  
-    			  problem.getName().equals("Basic Problem B-11") 
-    			)) return -1;
+    	// TODO: Rotation stuff is mostly written but not really implemented
+    	// TODO: Recognizing multiple shapes works! Need to finish integrating this logic.
+    	// TODO: For multiple shapes, need to implement logic for mapping similar shapes from A to B
+    	
+    	// Multiple shapes are working well, basic 4 - 9 all fail
+    	
+    	if (!problem.getName().startsWith("Basic Problem B") && !problem.getName().startsWith("Challenge Problem B")) return -1;
+    	
+//    	if (!( 
+//    			  problem.getName().equals("Basic Problem B-12") 
+//    			)) return -1;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
     	    	   	
-    	// TODO: Build the shapes in each diagram
-    	
-    	// Assuming one shape in each diagram
-    	// Build that shape, determine what type of shape it is, find its size and center
-    	// Add the shape object to its diagram
-    	
-
-    	
     	for (String name : Arrays.asList("A", "B", "C", "1", "2", "3", "4", "5", "6")) {
     		
-    		System.out.println("Building the shape in Diagram " + name);
+    		System.out.println("Looking at Diagram " + name);
     		Diagram diagram = diagramList.get(name);
     		List<Shape> shapeList = new ArrayList<Shape>();
     		
-    		Shape shape = new Shape();
+    		List<boolean[][]> shapeMatrices = discoverShapes(diagram);
     		
-    		// When looping through pixels we start at top left and work right and down
-    		for (int j = 0; j < 184; j++) {
-    		//	System.out.println();
-    			
-    			for (int i = 0; i < 184; i++) {
-    				
-    				if (diagram.getMatrix()[i][j]) {
-	    			//	System.out.print("X");
-	    				if (j > shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
-	    				if (j < shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
-	    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
-	    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
-	    				
-    				} else {
-    					//System.out.print("_");
-    				}
-    			}
-    		}
-    		
-    		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
-			System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
-			System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
-			System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
-
-			buildShape(diagram, shape);
-			shapeList.add(shape);
-			diagram.setShapeList(shapeList);
+    		for (boolean[][] matrix : shapeMatrices) {
+    			System.out.println("Creating a new Shape for this diagram");
+	    		Shape shape = new Shape();
+	    		
+	    		// When looping through pixels we start at top left and work right and down
+	    		for (int j = 0; j < 184; j++) {
+	    			for (int i = 0; i < 184; i++) {
+	    				if (matrix[i][j]) {
+		    				if (j > shape.getBottomMostPixel().getY()) shape.setBottomMostPixel(new Pixel(i, j));
+		    				if (j < shape.getTopMostPixel().getY()) shape.setTopMostPixel(new Pixel(i, j));
+		    				if (i < shape.getLeftMostPixel().getX()) shape.setLeftMostPixel(new Pixel(i, j));
+		    				if (i > shape.getRightMostPixel().getX()) shape.setRightMostPixel(new Pixel(i, j));		
+	    				}
+	    			}
+	    		}
+	    		
+	    		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
+				System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
+				System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
+				System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
+	
+				buildShape(diagram, shape);
+				shape.setShapeMatrix(matrix);
+				shapeList.add(shape);				
+	    	}
+	    	
+    		diagram.setShapeList(shapeList);
     	}
-    	
-    	System.out.println("Begin testing**************");
-    	discoverShapes(diagramList.get("A"));
-    	System.out.println("DONE TESTING*********");
-    	if (1 < 3) return 1;
     	
     	// Build up list of transformations between A->B and A->C
     	System.out.println("Building the transformations from A to B and from B to C");
@@ -413,8 +418,16 @@ public class Agent {
     	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("B")));
     	transformations.addAll(buildTransformations(diagramList.get("A"), diagramList.get("C")));
     	    	   	
+    	System.out.println("*** These are all of the transformations from A -> B and A-> C");
     	for (Transformation t : transformations) {
-    		System.out.println(t.getTransformation());
+    		
+    		if (t == null) System.out.println("OUCH");
+    		
+    		String shapeName = Shapes.NONE.toString();
+    		if (t.getIndexOfShape() != -1) {
+    			shapeName = diagramList.get("A").getShapeList().get(t.getIndexOfShape()).getShape().toString();
+    		}
+    		System.out.println(shapeName + ", " + t.getTransformation());
     	}
     	
     	// Use transformations on A to generate D by applying all transformations to A
@@ -443,33 +456,27 @@ public class Agent {
     	return Integer.parseInt(chosenAnswer);    	
     }
     
-    private void discoverShapes(Diagram masterDiagram) {
+    // For a diagram, create a new matrix for each shape that has only that single shape on the matrix
+    private List<boolean[][]> discoverShapes(Diagram masterDiagram) {
     	
     	boolean[][] checkedPixels = new boolean[184][184];
-    	
-    	boolean done = false;
+    	List<boolean[][]> matrixList = new ArrayList<boolean[][]>();
     	
     	for (int j = 0; j < 184; j++) {
     		for (int i = 0; i < 184; i++) {
 
     			if (!checkedPixels[i][j]) {
-    				
     				if (masterDiagram.getMatrix()[i][j]) {
-    					
-    					traverseShapeInMatrix(masterDiagram.getMatrix(), checkedPixels, new Pixel(i, j));
-    					//done = true;
-    					//break;
+    					matrixList.add(traverseShapeInMatrix(masterDiagram.getMatrix(), checkedPixels, new Pixel(i, j)));
     				}
-    			}
-    				
+    			}    				
     		}
-    		if (done) break;
     	}
     	
-    	
+    	return matrixList;    	
     }
     
-    private Diagram traverseShapeInMatrix(boolean[][] masterMatrix, boolean[][] checkedPixels, Pixel start) {
+    private boolean[][] traverseShapeInMatrix(boolean[][] masterMatrix, boolean[][] checkedPixels, Pixel start) {
     	
     	System.out.println("Beginning traverseShapeInMatrix with starting pixel (" + start.getX() + ", " + start.getY() + ")");
     	
@@ -521,20 +528,18 @@ public class Agent {
     		recentPixels.addAll(newPixelList);
     	}
     	
-    	for (int j = 0; j < 184; j++) {
-    		System.out.println();
-    			
-    			for (int i = 0; i < 184; i++) {
-    				
-    				if (newShapeMatrix[i][j]) {
-	    				System.out.print("X");
-    				} else {
-    					System.out.print("_");
-    				}
-    			}
-    		}
+//    	for (int j = 0; j < 184; j++) {
+//    		System.out.println();
+//    		for (int i = 0; i < 184; i++) {
+//    			if (newShapeMatrix[i][j]) {
+//	    			System.out.print("X");
+//    			} else {
+//    				System.out.print("_");
+//    			}
+//    		}
+//    	}
     	
-    	return null;
+    	return newShapeMatrix;
     }
     
     
@@ -646,45 +651,109 @@ public class Agent {
     		return transformations;
     	}
     	
-    	// Compare the shape in d1 with the shape in d2
-    	Shape s1 = d1.getShapeList().get(0);
-    	Shape s2 = d2.getShapeList().get(0);
+    	Map<Integer, Integer> mapping = new HashMap<Integer, Integer>();
+		List<Integer> matchedShapes = new ArrayList<Integer>();
     	
-    	// TODO: Once we have multiple shapes in each diagram, then need a way to map shapes in d1 with shapes in d2
-    	// TODO: I should set the list of transformations on the Shape object, so that when I have multiple shapes I
-    	// can say certain Transformations apply to specific shapes. IsDeleted is the only weird case
-    	if (s1.getShape() == s2.getShape()) {
     		
-    		System.out.println("The shapes are the same, figuring out transformations");
-    		
-    		if (s1.getRegion() != s2.getRegion()) {
-    			transformations.add(new Transformation(s1.getRegion(), s2.getRegion()));
-    		}
-    		
-    		if (s1.getTexture() != s2.getTexture()) {
-    			transformations.add(new Transformation(s1.getTexture(), s2.getTexture()));
-    		}
-    		
-    		if (s1.getSize() != s2.getSize()) {
-    			transformations.add(new Transformation(s1.getSize(), s2.getSize()));
-    		}
-    		
-    		if (s1.getRotation() != s2.getRotation()) {
-    			if (s1.getRotation() < s2.getRotation()) {
-    				transformations.add(new Transformation(s2.getRotation() - s1.getRotation()));
-    			} else {
-    				transformations.add(new Transformation(360 - Math.abs(s1.getRotation() - s2.getRotation())));
+		// In terms of building a mapping, an object can move position, rotate, or change texture
+		
+		// TODO: This needs to be tested!
+		// TODO: I still need to think through how these transformations work, shouldn't transformations be related to shapes?
+		
+		// TODO: For now, don't worry about shapes changing size
+		
+		// For each shape in d1
+		for (int i = 0; i < d1.getShapeList().size(); i++) {
+		
+			Shape baseShape = d1.getShapeList().get(i);
+			
+			int indexOfBestMatch = 0;
+    		Shape partnerShape = null;
+			
+    		// Look at all shapes in d2
+    		for (int j = 0; j < d2.getShapeList().size(); j++) {
+    			
+    			// If we have already matched up this shape then skip it
+    			if (matchedShapes.contains(j)) continue;
+    			
+    			Shape compareShape = d2.getShapeList().get(j);
+    			
+    			// If the shape types match then map them
+    			if (baseShape.getShape() == compareShape.getShape()) {
+    			
+    				// Are they about the same size?
+    				if ( (Math.abs(baseShape.getWidth() - compareShape.getWidth()) < 5) 
+    						&& (Math.abs(baseShape.getHeight() - compareShape.getHeight()) < 5)) {	    					
+    					partnerShape = compareShape;
+    					indexOfBestMatch = j;
+    				}
     			}
     		}
     		
-    	} else {
-    		System.out.println("The shapes are different");
-    		transformations.add(new Transformation(false, s1));
-    		transformations.add(new Transformation(true, s2));
+    		if (partnerShape != null) {
+    			matchedShapes.add(indexOfBestMatch);
+    			mapping.put(i, indexOfBestMatch);
+    			
+    		} else {
+    			mapping.put(i, -1);
+    		}
+		}
+    	
+
+    	// Create transformations for every shape in d1
+    	for (Map.Entry<Integer, Integer> entry : mapping.entrySet()) {
+    	    Integer key = entry.getKey();
+    	    Integer value = entry.getValue();
+    	    
+    	    if (value == -1) {
+    	    	
+    	    	// This shape not mapped to any other shapes, add a delete shape transformation
+    	    	System.out.println("Creating a DELETE Transformation");
+    	    	transformations.add(new Transformation(false, d1.getShapeList().get(key)));
+    	    	
+    	    } else {    	    	
+    	    	Transformation t = sameShapeTransform(key, d1.getShapeList().get(key), d2.getShapeList().get(value));
+    	    	if (t != null) transformations.add(t);    	    	
+    	    }
     	}
+    	
+    	// Need to check for any remaining shapes in d2 that didn't get mapped to a shape in d1
+		for (int i = 0; i < d2.getShapeList().size(); i++) {
+		
+			if (matchedShapes.contains(i)) continue;
+			System.out.println("Creating an ADD transformation");
+			transformations.add(new Transformation(true, d2.getShapeList().get(i)));		
+		}
     	
     	System.out.println("Done building transformations, returning list of size: " + transformations.size());
     	return transformations;    	
+    }
+    
+    private Transformation sameShapeTransform(int indexOfShape, Shape s1, Shape s2) {
+    	
+    	Transformation transformation = null;
+    	
+    	if (s1.getRegion() != s2.getRegion()) {
+			transformation = new Transformation(indexOfShape, s1.getRegion(), s2.getRegion());
+		}
+		
+		if (s1.getTexture() != s2.getTexture()) {
+			transformation = new Transformation(indexOfShape, s1.getTexture(), s2.getTexture());
+		}
+		
+		if (s1.getSize() != s2.getSize()) {
+			transformation = new Transformation(indexOfShape, s1.getSize(), s2.getSize());
+		}
+		
+		if (s1.getRotation() != s2.getRotation()) {
+			if (s1.getRotation() < s2.getRotation()) {
+				transformation = new Transformation(indexOfShape, s2.getRotation() - s1.getRotation());
+			} else {
+				transformation = new Transformation(indexOfShape, 360 - Math.abs(s1.getRotation() - s2.getRotation()));
+			}
+		}
+    	
+		return transformation;
     }
     
     private void rotateDiagram(Diagram d, int rotation) {
@@ -694,10 +763,7 @@ public class Agent {
     	}
     	
     	int degreesLeft = rotation;
-    	while (degreesLeft > 0) {
-    		
-    	}
-    	
+   
     }
     
     private void rotateDiagram90Degrees(Diagram d) {
