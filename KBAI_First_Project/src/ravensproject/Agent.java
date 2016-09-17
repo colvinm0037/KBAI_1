@@ -53,7 +53,8 @@ public class Agent {
     	HEXAGON,
     	OCTAGON,
     	HEART,
-    	STAR
+    	STAR,
+    	PLUS
     	
     }
     
@@ -311,6 +312,21 @@ public class Agent {
     
     	public boolean isIdenticalMatch(Diagram d2) {
     		
+    		System.out.println("Checking IDENTICAL MATCH");
+    		
+//	        for (int j = 0; j < 184; j++) {
+//	    		System.out.println();
+//	    		for (int i = 0; i < 184; i++) {
+//	    			if (this.getMatrix()[i][j]) {
+//		    			System.out.print("X");
+//	    			} else {
+//	    				System.out.print("_");
+//	    			}
+//	    		}
+//	    	}
+    		
+    		
+    		
     		for (int i = 0; i < 184; i++) {
     			for (int j = 0; j < 184; j++) {
     				if (this.getMatrix()[i][j] != d2.getMatrix()[i][j]) {
@@ -361,21 +377,30 @@ public class Agent {
     	
     	// TODO: Rotation stuff is mostly written but not really implemented
     	// TODO: Recognizing multiple shapes works! Need to finish integrating this logic.
-    	// TODO: For multiple shapes, need to implement logic for mapping similar shapes from A to B
+    	// TODO: Actually create an image/matrix of D so that I can check it visually
+    	// TODO: Multiple shapes are working well, basic 4 - 9 all fail with only one shape, start there 
     	
-    	// Multiple shapes are working well, basic 4 - 9 all fail
+    	// Problem #2 FIXED!
+    	// Problem #4 Fails because of mirroring instead of rotation
+    	// Problem #5 Fails because of mirroring
+    	// Problem #6 Fails because
+    	// Problem #7 Fails because of mirroring
+    	// Problem #8 Fails because
+    	// Problem #9 Fails because
     	
     	if (!problem.getName().startsWith("Basic Problem B") && !problem.getName().startsWith("Challenge Problem B")) return -1;
     	
-//    	if (!( 
-//    			  problem.getName().equals("Basic Problem B-12") 
-//    			)) return -1;
+    	if (!( 
+    			  problem.getName().equals("Basic Problem B-02") 
+    			)) return -1;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
     	    	   	
     	for (String name : Arrays.asList("A", "B", "C", "1", "2", "3", "4", "5", "6")) {
+    		
+    		// if (!name.equals("A")) continue;
     		
     		System.out.println("Looking at Diagram " + name);
     		Diagram diagram = diagramList.get(name);
@@ -403,9 +428,9 @@ public class Agent {
 				System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
 				System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
 				System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
-	
-				buildShape(diagram, shape);
+
 				shape.setShapeMatrix(matrix);
+				buildShape(shape);
 				shapeList.add(shape);				
 	    	}
 	    	
@@ -420,8 +445,6 @@ public class Agent {
     	    	   	
     	System.out.println("*** These are all of the transformations from A -> B and A-> C");
     	for (Transformation t : transformations) {
-    		
-    		if (t == null) System.out.println("OUCH");
     		
     		String shapeName = Shapes.NONE.toString();
     		if (t.getIndexOfShape() != -1) {
@@ -440,6 +463,13 @@ public class Agent {
     	System.out.println("Comparing D to all of the available answers");
     	
     	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
+    		
+    		if (D.isIdenticalMatch(diagramList.get(figure))) {
+    			System.out.println("***Is Identical Match");
+    			chosenAnswer = figure;
+    			break;
+    		}
+    		
     		int transformationCount = buildTransformations(D, diagramList.get(figure)).size();
     		
     		if (transformationCount < lowestCount) {
@@ -502,22 +532,22 @@ public class Agent {
     				newShapeMatrix[p.getX()][p.getY()] = true;
     				
     				// Add left if not already checked
-    				if (p.getX() > 1 && !checkedPixels[p.getX() - 1][p.getY()]) {
+    				if (p.getX() > 0 && !checkedPixels[p.getX() - 1][p.getY()]) {
     					newPixelList.add(new Pixel(p.getX() - 1, p.getY()));
     				}
     				
     				// Add right if not already checked
-    				if (p.getX() < 182 && !checkedPixels[p.getX() + 1][p.getY()]) {
+    				if (p.getX() < 183 && !checkedPixels[p.getX() + 1][p.getY()]) {
     					newPixelList.add(new Pixel(p.getX() + 1, p.getY()));
     				}
     				
     				// Add below if not already checked
-    				if (p.getY() < 182 && !checkedPixels[p.getX()][p.getY() + 1]) {
+    				if (p.getY() < 183 && !checkedPixels[p.getX()][p.getY() + 1]) {
     					newPixelList.add(new Pixel(p.getX(), p.getY() + 1));
     				}
     				
     				// Add above if not already checked
-    				if (p.getY() > 1 && !checkedPixels[p.getX()][p.getY() - 1]) {
+    				if (p.getY() > 0 && !checkedPixels[p.getX()][p.getY() - 1]) {
     					newPixelList.add(new Pixel(p.getX(), p.getY() - 1));
     				}
     				
@@ -545,55 +575,62 @@ public class Agent {
     
     private Diagram generateSolutionDiagram(Diagram A, List<Transformation> transformations) {
     	
-    	System.out.println("Beginning generateSolution");
+    	System.out.println("Beginning generateSolution to generate our final answer!");
     	
     	Diagram solution = new Diagram();
     	List<Shape> shapeList = new ArrayList<Shape>();
     	solution.setName("D");
     	
-    	Shape shape = A.getShapeList().get(0);
+    	for (int i = 0; i < A.getShapeList().size(); i++) {
+    		
+    		Shape shape = A.getShapeList().get(i);
+    		
+    		for (Transformation t : transformations) {
+	    
+    			if (t.getIndexOfShape() != i) continue;
+    			
+	    		// TODO: We are setting the rotation variable, but not actually rotating the image
+	    		if (t.getTransformation() == Transformations.ROTATION) {
+	    			shape.setRotation(t.getRotation());
+	    		}
+	    		
+	    		if (t.getTransformation() == Transformations.REGION) {
+	    			shape.setRegion(t.getRegionB());
+	    		}
+	
+				if (t.getTransformation() == Transformations.SIZE) {
+					shape.setSize(t.getSizeB());
+				}
+				
+				if (t.getTransformation() == Transformations.TEXTURE) {
+					shape.setTexture(t.getTextureB());
+				}
+				
+	    		if (t.getTransformation() == Transformations.DELETESHAPE) {
+	    			shape = null;
+	    		}
+	    	}
+    		
+    		if (shape != null) shapeList.add(shape);
+    	}
     	
-    	// TODO: Apply all of the transformations that we have onto this shape
-    	
+    	// Handle new shape additions
     	for (Transformation t : transformations) {
-    		
-    		// TODO: We are setting the rotation variable, but not actually rotating the image
-    		if (t.getTransformation() == Transformations.ROTATION) {
-    			shape.setRotation(t.getRotation());
-    		}
-    		
-    		if (t.getTransformation() == Transformations.REGION) {
-    			shape.setRegion(t.getRegionB());
-    		}
-
-			if (t.getTransformation() == Transformations.SIZE) {
-				shape.setSize(t.getSizeB());
-			}
-			
-			if (t.getTransformation() == Transformations.TEXTURE) {
-				shape.setTexture(t.getTextureB());
-			}
-			
-			if (t.getTransformation() == Transformations.ADDSHAPE) {
+    		if (t.getTransformation() == Transformations.ADDSHAPE) {
 				shapeList.add(t.getShape());
-    		}
-    	
-    		if (t.getTransformation() == Transformations.DELETESHAPE) {
-    			// TODO: Need to delete the shape
-    		}
-    		
+			}
     	}
     	
     	// TODO: Should actually set the pixel matrix for this diagram
     	
-    	System.out.println("Done generating the shape in D");
-    	System.out.println("Shape: " + shape.getShape());
-    	System.out.println("Region: " + shape.getRegion());
-    	System.out.println("Size: " + shape.getSize());
-    	System.out.println("Rotation: " + shape.getRotation());
     	
-    	shapeList.add(shape);
     	solution.setShapeList(shapeList);
+    	
+    	System.out.println("Done generating the diagram D");
+    	for (Shape shape : solution.getShapeList()) {
+    		System.out.println("Shape: " + shape.getShape() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Region: " + shape.getRegion() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());    		
+    	}
+
     	return solution;
     }
 
@@ -678,15 +715,19 @@ public class Agent {
     			
     			Shape compareShape = d2.getShapeList().get(j);
     			
+    			System.out.println(baseShape.getShape() + ", " + compareShape.getShape());
+    			
     			// If the shape types match then map them
     			if (baseShape.getShape() == compareShape.getShape()) {
-    			
+    				
     				// Are they about the same size?
     				if ( (Math.abs(baseShape.getWidth() - compareShape.getWidth()) < 5) 
     						&& (Math.abs(baseShape.getHeight() - compareShape.getHeight()) < 5)) {	    					
     					partnerShape = compareShape;
     					indexOfBestMatch = j;
     				}
+    				
+    				System.out.println("SAME SHAPE. I = " + i + ", J = " + j + "isNull: " + partnerShape == null);
     			}
     		}
     		
@@ -712,8 +753,7 @@ public class Agent {
     	    	transformations.add(new Transformation(false, d1.getShapeList().get(key)));
     	    	
     	    } else {    	    	
-    	    	Transformation t = sameShapeTransform(key, d1.getShapeList().get(key), d2.getShapeList().get(value));
-    	    	if (t != null) transformations.add(t);    	    	
+    	    	transformations.addAll(sameShapeTransform(key, d1.getShapeList().get(key), d2.getShapeList().get(value)));    	    	    	    	
     	    }
     	}
     	
@@ -729,31 +769,31 @@ public class Agent {
     	return transformations;    	
     }
     
-    private Transformation sameShapeTransform(int indexOfShape, Shape s1, Shape s2) {
+    private List<Transformation> sameShapeTransform(int indexOfShape, Shape s1, Shape s2) {
     	
-    	Transformation transformation = null;
+    	List<Transformation> transformations = new ArrayList<Transformation>();
     	
     	if (s1.getRegion() != s2.getRegion()) {
-			transformation = new Transformation(indexOfShape, s1.getRegion(), s2.getRegion());
+			transformations.add(new Transformation(indexOfShape, s1.getRegion(), s2.getRegion()));
 		}
 		
 		if (s1.getTexture() != s2.getTexture()) {
-			transformation = new Transformation(indexOfShape, s1.getTexture(), s2.getTexture());
+			transformations.add(new Transformation(indexOfShape, s1.getTexture(), s2.getTexture()));
 		}
 		
 		if (s1.getSize() != s2.getSize()) {
-			transformation = new Transformation(indexOfShape, s1.getSize(), s2.getSize());
+			transformations.add(new Transformation(indexOfShape, s1.getSize(), s2.getSize()));
 		}
 		
 		if (s1.getRotation() != s2.getRotation()) {
 			if (s1.getRotation() < s2.getRotation()) {
-				transformation = new Transformation(indexOfShape, s2.getRotation() - s1.getRotation());
+				transformations.add(new Transformation(indexOfShape, s2.getRotation() - s1.getRotation()));
 			} else {
-				transformation = new Transformation(indexOfShape, 360 - Math.abs(s1.getRotation() - s2.getRotation()));
+				transformations.add(new Transformation(indexOfShape, 360 - Math.abs(s1.getRotation() - s2.getRotation())));
 			}
 		}
     	
-		return transformation;
+		return transformations;
     }
     
     private void rotateDiagram(Diagram d, int rotation) {
@@ -823,16 +863,16 @@ public class Agent {
 		}
     }
     
-    private Shape buildShape(Diagram diagram, Shape shape) {
+    private Shape buildShape(Shape shape) {
     	
-    	discoverShapeType(diagram, shape);
+    	discoverShapeType(shape);
     	shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
     	shape.setRegion(findRegion(shape));
-    	determineShapeFill(diagram, shape);
+    	determineShapeFill(shape);
     	
-    	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow());
+    	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Region: " + shape.getRegion() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
     	
     	return shape;
     }
@@ -860,32 +900,51 @@ public class Agent {
     }
     
     // Look at our diagram, assuming only one shape is in the diagram, try to classify it as a specific shape
-    private Shape discoverShapeType(Diagram diagram, Shape shape) {
+    private Shape discoverShapeType(Shape shape) {
     	
     	// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
 		// And top right is neabled
 		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
 				&& shape.getTopMostPixel().getY() == shape.getRightMostPixel().getY() 
-				&& diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+				&& shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
 			System.out.println("Shape is SQUARE");
 			shape.setShape(Shapes.SQUARE);
 			return shape;
 		}
 		
-
 		
-		
-		// CIRCLE
+		// CIRCLE and PLUS sign
+		// TODO: This could also pickup a plus sign
 		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
 				&& compareVals(shape.getLeftMostPixel().getY(), shape.getRightMostPixel().getY())  
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()] 
-				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()] 
-				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
+				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()] 
+				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()] 
+				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 
-			System.out.println("Shape is Circle");
-			shape.setShape(Shapes.CIRCLE);
+			boolean isPlusSign = true;
+			
+			// Is there any pixel above the leftMost and to the left of TopMost?
+			for (int row = 0; row < shape.getLeftMostPixel().getY() - 5; row++) {
+				for (int column = 0; column < shape.getTopMostPixel().getX() - 5; column++) {
+					if (shape.getShapeMatrix()[row][column]) {
+						isPlusSign = false;
+						break;
+					}
+				}
+				if (isPlusSign == false) break;
+			}
+			
+			if (isPlusSign) {
+				System.out.println("Shape is PLUS");
+				shape.setShape(Shapes.PLUS);
+			} else {
+				System.out.println("Shape is CIRCLE");
+				shape.setShape(Shapes.CIRCLE);				
+			}
+			
+
 			return shape;
 		}
 			
@@ -894,7 +953,7 @@ public class Agent {
 		// xxx
 		if (compareVals(shape.getTopMostPixel().getX(), shape.getRightMostPixel().getX()) 
 				&& compareVals(shape.getLeftMostPixel().getY(), shape.getBottomMostPixel().getY()) 
-				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with zero rotation");
 			shape.setShape(Shapes.RIGHT_TRIANGLE);
@@ -905,13 +964,14 @@ public class Agent {
 		//  xx
 		//   x
 		// And top right is enabled
-		if (compareVals(shape.getTopMostPixel().getX(), shape.getLeftMostPixel().getX()) 
-				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY())
-				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+		if (compareVals(shape.getRightMostPixel().getY(), shape.getLeftMostPixel().getY()) 
+				&& compareVals(shape.getRightMostPixel().getX(), shape.getBottomMostPixel().getX())
+				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with 90 degree rotation");
 			shape.setShape(Shapes.RIGHT_TRIANGLE);
 			shape.setRotation(90);
+			return shape;
 		}     
 		
 		// xxx
@@ -920,7 +980,7 @@ public class Agent {
 		// And top right is neabled
 		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
 				&& compareVals(shape.getRightMostPixel().getY(), shape.getTopMostPixel().getY())
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with 180 degree rotation");
 			shape.setShape(Shapes.RIGHT_TRIANGLE);
@@ -933,7 +993,7 @@ public class Agent {
 		// xxx
 		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX())
 				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY())
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is Right triangle with 270 degree rotation");
 			shape.setShape(Shapes.RIGHT_TRIANGLE);
@@ -962,8 +1022,8 @@ public class Agent {
 		// xxxxx
 		if (compareVals(shape.getBottomMostPixel().getX(), shape.getLeftMostPixel().getX()) 
 				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY()) 
-				&& !diagram.getMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]
-				&& !diagram.getMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
+				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]
+				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
 			
 			System.out.println("Shape is Equalatiral Triangle");
 			shape.setShape(Shapes.TRIANGLE);
@@ -979,7 +1039,7 @@ public class Agent {
     	return shape;
     }
     
-    private void determineShapeFill(Diagram diagram, Shape shape) {
+    private void determineShapeFill(Shape shape) {
     	
     	// for square and circle draw a line from left to right and top to bottom to see if all solid
     	
@@ -990,7 +1050,7 @@ public class Agent {
     		int yValue = shape.getBottomMostPixel().getY() - (shape.getHeight() / 2);
     		for (int i = shape.getLeftMostPixel().getX(); i <= shape.getRightMostPixel().getX(); i++) {
     			
-    			if (!diagram.getMatrix()[i][yValue]) {
+    			if (!shape.getShapeMatrix()[i][yValue]) {
     				shape.setHollow(true);
     				return;
     			}
@@ -1000,7 +1060,7 @@ public class Agent {
     		int xValue = shape.getRightMostPixel().getX() - (shape.getWidth() / 2);
     		for (int i = shape.getTopMostPixel().getY(); i <= shape.getBottomMostPixel().getY(); i++) {
     			
-    			if (!diagram.getMatrix()[xValue][i]) {
+    			if (!shape.getShapeMatrix()[xValue][i]) {
     				shape.setHollow(true);
     				return;
     			}
@@ -1011,30 +1071,30 @@ public class Agent {
     	}
     	
     	if (shape.getShape() == Shapes.RIGHT_TRIANGLE) {
-    	    determineFillForRightTriangle(diagram, shape);
+    	    determineFillForRightTriangle(shape);
     	}
     	
     	// TODO: Don't worry about partially filled shapes for now
     	
     }
     
-    private void determineFillForRightTriangle(Diagram diagram, Shape shape) {
+    private void determineFillForRightTriangle(Shape shape) {
     	
     	boolean solidVertical = false;
     	boolean solidHorizontal = false;
     	
     	if (shape.getRotation() == 0) {
-    		solidVertical = checkVerticalTriangleLine(diagram, shape, true);
-			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, true);
+    		solidVertical = checkVerticalTriangleLine(shape, true);
+			solidHorizontal = checkHorizontalTriangleLine(shape, true);
 		} else if (shape.getRotation() == 90) {
-			solidVertical = checkVerticalTriangleLine(diagram, shape, false);
-			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, true);    			
+			solidVertical = checkVerticalTriangleLine(shape, false);
+			solidHorizontal = checkHorizontalTriangleLine(shape, true);    			
 		} else if (shape.getRotation() == 180) {
-			solidVertical = checkVerticalTriangleLine(diagram, shape, false);
-			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, false);
+			solidVertical = checkVerticalTriangleLine(shape, false);
+			solidHorizontal = checkHorizontalTriangleLine(shape, false);
 		} else if (shape.getRotation() == 270) {
-			solidVertical = checkVerticalTriangleLine(diagram, shape, true);
-			solidHorizontal = checkHorizontalTriangleLine(diagram, shape, false);
+			solidVertical = checkVerticalTriangleLine(shape, true);
+			solidHorizontal = checkHorizontalTriangleLine(shape, false);
 		}
     	
 		System.out.println("vertical: " + solidVertical + ", horizontal: " + solidHorizontal);
@@ -1052,7 +1112,7 @@ public class Agent {
     	
     }
     
-    private boolean checkVerticalTriangleLine(Diagram diagram, Shape shape, boolean topToBottom) {
+    private boolean checkVerticalTriangleLine(Shape shape, boolean topToBottom) {
     	
     	boolean hitEdge = false;
     	boolean isSolidLine = true;
@@ -1061,12 +1121,12 @@ public class Agent {
     	if (topToBottom) {
 			for (int i = shape.getTopMostPixel().getY(); i <= shape.getBottomMostPixel().getY(); i++) {		
 				if (!hitEdge) {
-					if (diagram.getMatrix()[xValue][i]) {
+					if (shape.getShapeMatrix()[xValue][i]) {
 						hitEdge = true;					
 					}
 					continue;
 				}
-				if (!diagram.getMatrix()[xValue][i]) {
+				if (!shape.getShapeMatrix()[xValue][i]) {
 					isSolidLine = false;
 					break;
 				}
@@ -1074,12 +1134,12 @@ public class Agent {
     	} else {
 			for (int i = shape.getBottomMostPixel().getY(); i >= shape.getTopMostPixel().getY(); i--) {		
 				if (!hitEdge) {
-					if (diagram.getMatrix()[xValue][i]) {
+					if (shape.getShapeMatrix()[xValue][i]) {
 						hitEdge = true;					
 					}
 					continue;
 				}
-				if (!diagram.getMatrix()[xValue][i]) {
+				if (!shape.getShapeMatrix()[xValue][i]) {
 					isSolidLine = false;
 					break;
 				}
@@ -1089,7 +1149,7 @@ public class Agent {
 		return isSolidLine;
     }
     
-    private boolean checkHorizontalTriangleLine(Diagram diagram, Shape shape, boolean leftToRight) {
+    private boolean checkHorizontalTriangleLine(Shape shape, boolean leftToRight) {
     	
 	 	boolean hitEdge = false;
     	boolean isSolidLine = true;
@@ -1098,13 +1158,13 @@ public class Agent {
     	if (leftToRight) {
 			for (int i = shape.getLeftMostPixel().getX(); i <= shape.getRightMostPixel().getX(); i++) {					
 				if (!hitEdge) {
-					if (diagram.getMatrix()[i][yValue]) {
+					if (shape.getShapeMatrix()[i][yValue]) {
 						hitEdge = true;					
 					}
 					continue;
 				}
 				
-				if (!diagram.getMatrix()[i][yValue]) {
+				if (!shape.getShapeMatrix()[i][yValue]) {
 					isSolidLine = false;
 					break;
 				}
@@ -1112,12 +1172,12 @@ public class Agent {
     	} else {
 			for (int i = shape.getRightMostPixel().getX(); i >= shape.getLeftMostPixel().getX(); i--) {				
 				if (!hitEdge) {
-					if (diagram.getMatrix()[i][yValue]) {
+					if (shape.getShapeMatrix()[i][yValue]) {
 						hitEdge = true;
 					}
 					continue;
 				}
-				if (!diagram.getMatrix()[i][yValue]) {
+				if (!shape.getShapeMatrix()[i][yValue]) {
 					isSolidLine = false;
 					break;
 				}
