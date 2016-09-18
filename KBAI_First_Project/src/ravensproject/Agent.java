@@ -26,7 +26,7 @@ import javax.imageio.ImageIO;
  */
 public class Agent {
 	
-	private static int DELTA = 3;
+	private static int DELTA = 15;
     /**
      * The default constructor for your Agent. Make sure to execute any
      * processing necessary before your Agent starts solving problems here.
@@ -77,7 +77,9 @@ public class Agent {
     	ROTATION,
     	TEXTURE,
     	ADDSHAPE,
-    	DELETESHAPE
+    	DELETESHAPE,
+    	MIRRORING_XAXIS,
+    	MIRRORING_YAXIS
     }
     
     public class Pixel {
@@ -134,6 +136,16 @@ public class Agent {
 				this.transformation = Transformations.DELETESHAPE;
 			}
 			this.shape = shape;
+		}
+		
+		public Transformation(int index, boolean xAxis) {
+			
+			if (xAxis) {
+				this.transformation = Transformations.MIRRORING_XAXIS;
+			} else {
+				this.transformation = Transformations.MIRRORING_YAXIS;
+			}
+			this.indexOfShape = index;
 		}
     	
 		private Transformations transformation = Transformations.NONE;
@@ -314,18 +326,7 @@ public class Agent {
     		
     		System.out.println("Checking IDENTICAL MATCH");
     		
-//	        for (int j = 0; j < 184; j++) {
-//	    		System.out.println();
-//	    		for (int i = 0; i < 184; i++) {
-//	    			if (this.getMatrix()[i][j]) {
-//		    			System.out.print("X");
-//	    			} else {
-//	    				System.out.print("_");
-//	    			}
-//	    		}
-//	    	}
-    		
-    		
+    		// printMatrix(this.getMatrix());
     		
     		for (int i = 0; i < 184; i++) {
     			for (int j = 0; j < 184; j++) {
@@ -380,6 +381,8 @@ public class Agent {
     	// TODO: Actually create an image/matrix of D so that I can check it visually
     	// TODO: Multiple shapes are working well, basic 4 - 9 all fail with only one shape, start there 
     	
+    	// TODO: Wrote mirroring methods, need to implement them
+    	
     	// Problem #2 FIXED!
     	// Problem #4 Fails because of mirroring instead of rotation
     	// Problem #5 Fails because of mirroring
@@ -391,7 +394,7 @@ public class Agent {
     	if (!problem.getName().startsWith("Basic Problem B") && !problem.getName().startsWith("Challenge Problem B")) return -1;
     	
     	if (!( 
-    			  problem.getName().equals("Basic Problem B-02") 
+    			  problem.getName().equals("Basic Problem B-04") 
     			)) return -1;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
@@ -402,7 +405,7 @@ public class Agent {
     		
     		// if (!name.equals("A")) continue;
     		
-    		System.out.println("Looking at Diagram " + name);
+    		System.out.println("LOOKING AT DIAGRAM " + name);
     		Diagram diagram = diagramList.get(name);
     		List<Shape> shapeList = new ArrayList<Shape>();
     		
@@ -436,6 +439,14 @@ public class Agent {
 	    	
     		diagram.setShapeList(shapeList);
     	}
+    	
+    	// TODO: Remove this test
+//    	Shape mirror = mirrorOverXAxis(diagramList.get("A").getShapeList().get(1));
+//    	
+//    	System.out.println("MATCH: " + isIdenticalMatch(diagramList.get("A").getShapeList().get(1), mirror));
+//    	
+    	//mirrorOverYAxis(diagramList.get("A").getShapeList().get(0));
+
     	
     	// Build up list of transformations between A->B and A->C
     	System.out.println("Building the transformations from A to B and from B to C");
@@ -558,16 +569,7 @@ public class Agent {
     		recentPixels.addAll(newPixelList);
     	}
     	
-//    	for (int j = 0; j < 184; j++) {
-//    		System.out.println();
-//    		for (int i = 0; i < 184; i++) {
-//    			if (newShapeMatrix[i][j]) {
-//	    			System.out.print("X");
-//    			} else {
-//    				System.out.print("_");
-//    			}
-//    		}
-//    	}
+    	// printMatrix(newShapeMatrix);
     	
     	return newShapeMatrix;
     }
@@ -773,6 +775,19 @@ public class Agent {
     	
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	
+    	// Check if shapes are mirrors of each other, don't bother with squares/circles
+    	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE) {
+    		
+//    		Shape mirroredXWise = mirrorOverXAxis(s2);
+//        	Shape mirroredYWise = mirrorOverYAxis(s2);
+//        	
+//        	if (isIdenticalMatch(s1, mirroredXWise)) {        		
+//        		transformations.add(new Transformation(indexOfShape, true));
+//        	} else if (isIdenticalMatch(s1, mirroredYWise)) {
+//        		transformations.add(new Transformation(indexOfShape, false));
+//        	}
+    	}
+    	
     	if (s1.getRegion() != s2.getRegion()) {
 			transformations.add(new Transformation(indexOfShape, s1.getRegion(), s2.getRegion()));
 		}
@@ -914,8 +929,7 @@ public class Agent {
 		}
 		
 		
-		// CIRCLE and PLUS sign
-		// TODO: This could also pickup a plus sign
+		// CIRCLE, PLUS, and PACMAN sign
 		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
 				&& compareVals(shape.getLeftMostPixel().getY(), shape.getRightMostPixel().getY())  
 				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
@@ -923,28 +937,128 @@ public class Agent {
 				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()] 
 				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 
+			System.out.println("Either a Circle, a Plus, or a Pacman");
+			
 			boolean isPlusSign = true;
+			boolean isPacMan = true;
+			int rowValue = 0;
+			int columnValue = 0;
 			
 			// Is there any pixel above the leftMost and to the left of TopMost?
 			for (int row = 0; row < shape.getLeftMostPixel().getY() - 5; row++) {
 				for (int column = 0; column < shape.getTopMostPixel().getX() - 5; column++) {
 					if (shape.getShapeMatrix()[row][column]) {
 						isPlusSign = false;
+						rowValue = row;
+						columnValue = column;
 						break;
 					}
 				}
 				if (isPlusSign == false) break;
 			}
+		
+			// This logic works for all the pacmans except for when the top left of pacman is open
+			Shape mirrorShape = mirrorOverXAxis(shape);
 			
-			if (isPlusSign) {
+			boolean isMirroredPlus = true;
+			
+			// Is there any pixel above the leftMost and to the left of TopMost?
+			for (int row = 0; row < shape.getLeftMostPixel().getY() - 5; row++) {
+				for (int column = 0; column < shape.getTopMostPixel().getX() - 5; column++) {
+					if (mirrorShape.getShapeMatrix()[row][column]) {
+						isMirroredPlus = false;
+						break;
+					}
+				}
+				if (isMirroredPlus == false) break;
+			}
+
+			if (isPlusSign && isMirroredPlus) {
 				System.out.println("Shape is PLUS");
 				shape.setShape(Shapes.PLUS);
-			} else {
-				System.out.println("Shape is CIRCLE");
-				shape.setShape(Shapes.CIRCLE);				
+				return shape;
+			} else  if (isPlusSign && !isMirroredPlus){
+				System.out.println("Shape is PACMAN with Zero rotation");
+				shape.setShape(Shapes.PACMAN);
+				return shape;
 			}
 			
+			
+			
+			System.out.println("Row: " + rowValue + ", Column: " + columnValue);
+			if (rowValue != 0 && columnValue != 0) {
+				
+				// Then it is considered an unrecognized Shape!
+				
+				boolean foundTopRight = false;
+				boolean foundBottomRight = false;
+				boolean foundBottomLeft = false;
+				int rowStart = 0;
+				int colStart = 0;
+				
+				// Look in the top right region
+				
+				rowStart = rowValue;
+				colStart = 184 - columnValue;
+				
+				for (int i = 0; i < 10; i++) {
+					if (shape.getShapeMatrix()[colStart][rowStart + i]) {
+						foundTopRight = true;
+					}
+				}
 
+				
+				// Look at bottom left
+				
+				rowStart = 184 - rowValue;
+				colStart = columnValue;
+				
+				for (int i = 0; i < 10; i++) {
+					if (shape.getShapeMatrix()[colStart][rowStart - i]) {
+						foundBottomLeft = true;
+					}
+				}
+				
+				// Look at bottom right
+				
+				rowStart = 184 - rowValue;
+				colStart = 184 - columnValue;
+				
+				for (int i = 0; i < 10; i++) {
+					if (shape.getShapeMatrix()[colStart][rowStart - i]) {
+						foundBottomRight = true;
+					}
+				}
+				
+				System.out.println("Found Top Right: " + foundTopRight);
+				System.out.println("Found Bottom Left: " + foundBottomLeft);
+				System.out.println("Found Bottom Right: " + foundBottomRight);
+				
+				if (foundTopRight && foundBottomRight && !foundBottomLeft) {
+					System.out.println("Shape is PACMAN with 90 rotation");
+					shape.setShape(Shapes.PACMAN);
+					shape.setRotation(90);
+					return shape;
+				}
+				
+				if (foundTopRight && !foundBottomRight && foundBottomLeft) {
+					System.out.println("Shape is PACMAN with 180 rotation");
+					shape.setShape(Shapes.PACMAN);
+					shape.setRotation(180);
+					return shape;
+				}
+				
+				if (!foundTopRight && foundBottomRight && foundBottomLeft) {
+					System.out.println("Shape is PACMAN with 270 rotation");
+					shape.setShape(Shapes.PACMAN);
+					shape.setRotation(270);
+					return shape;
+				}
+			}
+			
+			// Else it is a Circle
+			System.out.println("Shape is CIRCLE");
+			shape.setShape(Shapes.CIRCLE);
 			return shape;
 		}
 			
@@ -1001,21 +1115,7 @@ public class Agent {
 			return shape;
 		}       				
 	
-//    	Building the shape in Diagram B
-//    	TopMost: (28, 28)
-//    	BottomMost: (28, 155)
-//    	LeftMost: (28, 28)
-//    	RightMost: (155, 155)
-//    	returning true
-//    	Shape is Right triangle with 270 degree rotation
-//    	
-//    	Building the shape in Diagram 4
-//    	TopMost: (26, 26)
-//    	BottomMost: (26, 157)
-//    	LeftMost: (26, 26)
-//    	RightMost: (157, 154)
-//    	
-
+		// TODO: Add logic for basic rectangle
 		
 		//   x
 		//  xxx
@@ -1185,6 +1285,112 @@ public class Agent {
     	}
 		
 		return isSolidLine;
+    }
+    
+    private Shape mirrorOverXAxis(Shape shape) {
+    
+    	Shape mirroredShape = new Shape();
+    	boolean[][] mirroredMatrix = new boolean[184][184];
+    	
+    	// printMatrix(shape.getShapeMatrix());
+
+    	for (int row = 0; row < 184; row++) {
+    		for (int column = 0; column < 184; column++) {
+    			
+    			if (shape.getShapeMatrix()[row][column]) {
+    				mirroredMatrix[183 - row][column] = true;	
+    			}
+    		}
+    	}
+    	
+    	System.out.println();
+    	// printMatrix(mirroredMatrix);
+
+    	mirroredShape.setShapeMatrix(mirroredMatrix);
+    	return mirroredShape;
+    }
+    
+    private Shape mirrorOverYAxis(Shape shape) {
+    	
+    	Shape mirroredShape = new Shape();
+    	boolean[][] mirroredMatrix = new boolean[184][184];
+    	
+    	//printMatrix(shape.getShapeMatrix());
+    	
+    	for (int row = 0; row < 184; row++) {
+    		for (int column = 0; column < 184; column++) {
+    			
+    			if (shape.getShapeMatrix()[row][column]) {
+    				mirroredMatrix[row][183 - column] = true;	
+    			}
+    		}
+    	}
+    	
+    	//printMatrix(mirroredMatrix);	
+    	
+    	mirroredShape.setShapeMatrix(mirroredMatrix);
+    	return mirroredShape;    	
+    }
+    
+
+    private boolean isIdenticalMatch(Shape s1, Shape s2) {
+		
+    	// TODO: This should be more flexible
+    	
+    	int differenceCount = 0;
+    	
+		for (int i = 0; i < 184; i++) {
+			for (int j = 0; j < 184; j++) {
+				if (s1.getShapeMatrix()[i][j] != s2.getShapeMatrix()[i][j]) {
+					differenceCount++;
+				}
+			}
+		}    	
+		System.out.println("Difference Count: " + differenceCount);
+		
+		if (differenceCount > 0) {
+			
+			System.out.println("Try to shift");
+			
+			differenceCount = 0;
+			
+			boolean[][] shift = new boolean[184][184];
+			
+			for (int i = 0; i < 184; i++) {
+				for (int j = 1; j < 184; j++) {
+					if (s1.getShapeMatrix()[i][j]) {
+						shift[i][j - 1] = s1.getShapeMatrix()[i][j];						
+					}
+				}
+			}
+			
+			for (int i = 0; i < 184; i++) {
+				for (int j = 0; j < 184; j++) {
+					if (shift[i][j] != s2.getShapeMatrix()[i][j]) {
+						differenceCount++;
+					}
+				}
+			}    	
+			
+			System.out.println("New Difference count: " + differenceCount);
+			
+		}
+		
+		return (differenceCount == 0);		
+	}
+    
+    
+    private void printMatrix(boolean[][] matrix) {
+    	 for (int j = 0; j < 184; j++) {
+       		System.out.println();
+       		for (int i = 0; i < 184; i++) {
+       			if (matrix[i][j]) {
+   	    			System.out.print("X");
+       			} else {
+       				System.out.print("_");
+       			}
+       		}
+       	}
     }
     
     private static boolean compareVals(int a, int b) {
