@@ -64,6 +64,14 @@ public class Agent {
     	STRIPED
     }
     
+    public enum Fills {
+    	NONE,
+    	LEFT,
+    	RIGHT,
+    	TOP,
+    	BOTTOM
+    }
+    
     public enum Sizes {
     	SMALL,
     	MEDIUM,
@@ -79,7 +87,8 @@ public class Agent {
     	ADDSHAPE,
     	DELETESHAPE,
     	MIRRORING_XAXIS,
-    	MIRRORING_YAXIS
+    	MIRRORING_YAXIS,
+    	HALF_FILL
     }
     
     public class Pixel {
@@ -149,6 +158,12 @@ public class Agent {
 			this.indexOfShape = index;
 		}
     	
+		public Transformation(Fills fillsA, Fills fillsB) {
+			this.transformation = Transformations.HALF_FILL;
+			this.fillsA = fillsA;
+			this.fillsB = fillsB;
+		}
+
 		private Transformations transformation = Transformations.NONE;
 		private int indexOfShape = -1;
     	private Sizes sizeA;
@@ -159,6 +174,8 @@ public class Agent {
     	private Textures textureA;
     	private Textures textureB;
     	private Shape shape;
+    	private Fills fillsA;
+    	private Fills fillsB;
     	
 		public Transformations getTransformation() {
 			return transformation;
@@ -190,6 +207,12 @@ public class Agent {
 		public int getIndexOfShape() {
 			return indexOfShape;
 		}
+		public Fills getFillsA() {
+			return fillsA;
+		}
+		public Fills getFillsB() {
+			return fillsB;
+		}
     }
     
     public class Shape {
@@ -197,12 +220,14 @@ public class Agent {
     	boolean isHollow;
     	boolean isSolid;
     	boolean isStriped;
+    	boolean isCentered;
     	int height = 0;
     	int width = 0;
     	int region = 0;
         Shapes shape = Shapes.NONE;    	
     	Textures texture = Textures.HOLLOW;
         Sizes size = Sizes.SMALL;
+        Fills fills = Fills.NONE;
         int rotation = 0;
     	boolean[][] shapeMatrix;
         
@@ -283,6 +308,13 @@ public class Agent {
 		}
 		public void setCenter(Pixel center) {
 			this.center = center;
+			
+			if ( (center.getX() > 86 && center.getX() < 98) 
+					&& (center.getY() > 86 && center.getY() < 98) ) {
+				
+				this.isCentered = true;
+			}
+			
 		}
 		public int getRegion() {
 			return region;
@@ -314,6 +346,19 @@ public class Agent {
 		public void setShapeMatrix(boolean[][] shapeMatrix) {
 			this.shapeMatrix = shapeMatrix;
 		}
+		public Fills getFills() {
+			return fills;
+		}
+		public void setFills(Fills fills) {
+			this.fills = fills;
+		}
+		public boolean isCentered() {
+			return isCentered;
+		}
+		public void setCentered(boolean isCentered) {
+			this.isCentered = isCentered;
+		}
+		
     }
     
     public class Diagram {
@@ -386,15 +431,15 @@ public class Agent {
     	// TODO: Wrote mirroring methods, need to implement them
     	
     	// Problem #2 Fails
-    	// Problem #8 Fails because
-    	// Problem #10 Fails because
+    	// Problem #6 Fails because
+ 
     	
     	if (!problem.getName().startsWith("Basic Problem B") && !problem.getName().startsWith("Challenge Problem B")) return -1;
     	
-    	if (!( 
-    			  problem.getName().equals("Basic Problem B-08") 
-    			)) return -1;
-//    	
+//    	if (!( 
+//    			  problem.getName().equals("Basic Problem B-08") 
+//    			)) return -1;
+////    	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
@@ -624,9 +669,6 @@ public class Agent {
     				shape = new Shape();
     				buildShape(mirroredXWise.getShapeMatrix(), shape);
     				shape.setTexture(texture);
-    				
-    				// When mirroring also mirror region
-    				//if (shape.getR)
     			}
     			
     			if (t.getTransformation() == Transformations.MIRRORING_YAXIS) {
@@ -657,18 +699,19 @@ public class Agent {
 				if (t.getTransformation() == Transformations.TEXTURE) {
 					shape.setTexture(t.getTextureB());
 				}
+				
+				if (t.getTransformation() == Transformations.HALF_FILL) {
+					shape.setFills(t.getFillsB());
+				}
 	    	}    		
     		
     		finalList.add(shape);
     	}
-    	
-    	
-    	
     	solution.getShapeList().addAll(finalList);
     	
     	System.out.println("Done generating the diagram D ****");
     	for (Shape shape : solution.getShapeList()) {
-    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Region: " + shape.getRegion() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());    		
+    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", HalfFills: " + shape.getFills() + ", Region: " + shape.getRegion() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());    		
     	}
 
     	return solution;
@@ -842,11 +885,8 @@ public class Agent {
             	// y-wise mirror
         		isMirroring = true;
             	transformations.add(new Transformation(indexOfShape, false));        	
-        	}
-        	
+        	}		
     	}
-    	
-    	System.out.println("IsMirroring: " + isMirroring);
     	
     	// Only bother checking if we don't have a Mirroring
     	if (!isMirroring) {
@@ -861,9 +901,16 @@ public class Agent {
     			
     		}
     		
-    		if (s1.getRegion() != s2.getRegion()) {
-				transformations.add(new Transformation(indexOfShape, s1.getRegion(), s2.getRegion()));
-			}
+    		// If they are both centered then don't bother with region 
+    		if (!s1.isCentered() || !s2.isCentered()) {
+	    		if (s1.getRegion() != s2.getRegion()) {
+					transformations.add(new Transformation(indexOfShape, s1.getRegion(), s2.getRegion()));
+				}
+    		}
+    		
+    		if (s1.getFills() != s2.getFills()) {
+    			transformations.add(new Transformation(s1.getFills(), s2.getFills()));
+    		}
 			
     	}
     	
@@ -973,9 +1020,51 @@ public class Agent {
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
     	shape.setRegion(findRegion(shape));
     	determineShapeFill(shape);
+    	discoverHalfFill(shape);
     	
-    	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " + shape.getTexture().toString() + ",  Region: " + shape.getRegion() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
+    	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " 
+    			+ shape.getTexture().toString() + ",  Region: " + shape.getRegion() + ", HalfFill: " + shape.getFills() 
+    			+ ", Center (" + shape.getCenter().getX() + ", " + shape.getCenter().getY() + "), Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
     	return shape;
+    }
+    
+    // TODO: This is a hacky fix designed to help solve problem B-08 with half filled objects
+    private void discoverHalfFill(Shape shape) {
+    	
+    	int count = countPixels(shape);
+    	int leftCount = 0;
+    	int rightCount = 0;
+    	int topCount = 0;
+    	int bottomCount = 0;
+    	
+    	// if left full and right empty then left fill
+    	for (int i = 0; i < 184; i++) {
+    		for (int j = 0; j < 184; j++) {
+    			if (shape.getShapeMatrix()[i][j]) {
+    				
+    				if (i < 92) leftCount++;
+    				if (i >= 92) rightCount++;
+    				if (j < 92) topCount++;
+    				if (j >= 92) bottomCount++;
+    			}
+    		}
+    	}
+    	
+    	double treshold = count * .67;
+    	
+    	System.out.println("Treshold = " + treshold);
+    	System.out.println("LeftCount: " + leftCount + ", RightCount: " + rightCount);
+    	System.out.println("TopCount: " + topCount + ", BottomCount: " + bottomCount);
+    	
+    	if (leftCount > treshold) {
+    		shape.setFills(Fills.LEFT);
+    	} else if (rightCount > treshold) {
+    		shape.setFills(Fills.RIGHT);
+    	} else if (topCount > treshold) {
+    		shape.setFills(Fills.TOP);
+    	} else if (bottomCount > treshold) {
+    		shape.setFills(Fills.BOTTOM);
+    	}
     }
     
     private int findRegion(Shape shape) {
