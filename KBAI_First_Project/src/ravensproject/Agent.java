@@ -69,7 +69,11 @@ public class Agent {
     	LEFT,
     	RIGHT,
     	TOP,
-    	BOTTOM
+    	BOTTOM,
+    	TOP_RIGHT,
+    	TOP_LEFT,
+    	BOTTOM_RIGHT,
+    	BOTTOM_LEFT
     }
     
     public enum Sizes {
@@ -158,10 +162,11 @@ public class Agent {
 			this.indexOfShape = index;
 		}
     	
-		public Transformation(Fills fillsA, Fills fillsB) {
+		public Transformation(int index, Fills fillsA, Fills fillsB) {
 			this.transformation = Transformations.HALF_FILL;
 			this.fillsA = fillsA;
 			this.fillsB = fillsB;
+			this.indexOfShape = index;
 		}
 
 		private Transformations transformation = Transformations.NONE;
@@ -432,12 +437,11 @@ public class Agent {
     	
     	// Problem #2 Fails
     	// Problem #6 Fails because
- 
     	
-    	if (!problem.getName().startsWith("Basic Problem B") && !problem.getName().startsWith("Challenge Problem B")) return -1;
+    	//if (!problem.getName().startsWith("Basic Problem B") && !problem.getName().startsWith("Challenge Problem B")) return -1;
     	
 //    	if (!( 
-//    			  problem.getName().equals("Basic Problem B-08") 
+//    			  problem.getName().equals("Basic Problem B-02") 
 //    			)) return -1;
 ////    	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
@@ -486,6 +490,7 @@ public class Agent {
     	// Compare D to all of the available solutions
     	String chosenAnswer = "";
     	int lowestCount = Integer.MAX_VALUE;
+    	int transformationCount = 0;
     	
     	System.out.println("\nXXX Comparing D to all of the available answers");
     	
@@ -499,21 +504,14 @@ public class Agent {
     			break;
     		}
     		
-        	List<Transformation> transformations2 = new ArrayList<Transformation>();
-        	
+        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
         	transformations2.addAll(buildTransformations(D, diagramList.get(figure)));
         	
-        	int transformationCount = transformations2.size();
-        	
+        	transformationCount = transformations2.size();
     		System.out.println("TransformationCount: " + transformationCount);
-    		
     		System.out.println("*** These are all of the transformations from D -> " + figure);
-        	for (Transformation t : transformations2) {
-        		
-
-        		System.out.println(t.getTransformation());
-        	}
-    		
+        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+        	
     		if (transformationCount < lowestCount) {
     			lowestCount = transformationCount;
     			chosenAnswer = figure;
@@ -521,9 +519,55 @@ public class Agent {
     		}    		
     	}
     	
+    	System.out.println("First Chosen Answer: " + chosenAnswer);
+    	
+    	// We didn't find a perfect fit
+    	if (transformationCount > 0) {
+    		
+    		System.out.println("\n\nTRYING an Alternate Strategy");
+    		
+    		for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
+        		
+        		System.out.println("Comparing D to " + figure);
+        		
+        		if (D != null && D.getShapeList() != null && D.getShapeList().size() > 0) {
+        		
+        			if (D.getShapeList().get(0).getFills() != Fills.NONE) {
+		    			
+	    				if (D.getShapeList().get(0).getFills() == Fills.TOP_RIGHT) D.getShapeList().get(0).setFills(Fills.BOTTOM_LEFT);
+	    				else if (D.getShapeList().get(0).getFills() == Fills.TOP_LEFT) D.getShapeList().get(0).setFills(Fills.BOTTOM_RIGHT);
+	    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM_LEFT) D.getShapeList().get(0).setFills(Fills.TOP_RIGHT);
+	    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM_RIGHT) D.getShapeList().get(0).setFills(Fills.TOP_LEFT);
+	    				
+	    				if (D.getShapeList().get(0).getFills() == Fills.RIGHT) D.getShapeList().get(0).setFills(Fills.LEFT);
+	    				else if (D.getShapeList().get(0).getFills() == Fills.TOP) D.getShapeList().get(0).setFills(Fills.BOTTOM);
+	    				else if (D.getShapeList().get(0).getFills() == Fills.LEFT) D.getShapeList().get(0).setFills(Fills.RIGHT);
+	    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM) D.getShapeList().get(0).setFills(Fills.TOP);
+	    			
+        			}		
+        		}
+        		
+            	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+            	transformations2.addAll(buildTransformations(D, diagramList.get(figure)));
+            	
+            	transformationCount = transformations2.size();
+        		System.out.println("TransformationCount: " + transformationCount);
+        		System.out.println("*** These are all of the transformations from D -> " + figure);
+            	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+            	
+        		if (transformationCount < lowestCount) {
+        			lowestCount = transformationCount;
+        			chosenAnswer = figure;
+        			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+        		}    		
+        	}
+    		
+    		
+    	}
+    	
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	
-    	rotateDiagram(diagramList.get("3"), 90);
+    	//rotateDiagram(diagramList.get("3"), 90);
     	
     	return Integer.parseInt(chosenAnswer);    	
     }
@@ -683,6 +727,36 @@ public class Agent {
     	    		
 	    		// TODO: We are setting the rotation variable, but not actually rotating the image
 	    		if (t.getTransformation() == Transformations.ROTATION) {
+	    			
+	    			// if rotating, then reset half-fill
+//	    			System.out.println("\nTESTING");
+//	    			Shape rotatedShape = rotateShape(shape, t.getRotation());
+//	    			buildShape(rotatedShape.getShapeMatrix(), rotatedShape);
+//	    			System.out.println("FILLS: " + rotatedShape.getFills());
+	    			
+	    			if (shape.getFills() != Fills.NONE) {
+		    			// If rotating, change half fill
+		    			int rotation = t.getRotation();
+		    			
+		    			while (rotation >= 90) {
+		    				
+		    				if (shape.getFills() == Fills.TOP_RIGHT) shape.setFills(Fills.TOP_LEFT);
+		    				else if (shape.getFills() == Fills.TOP_LEFT) shape.setFills(Fills.BOTTOM_LEFT);
+		    				else if (shape.getFills() == Fills.BOTTOM_LEFT) shape.setFills(Fills.BOTTOM_RIGHT);
+		    				else if (shape.getFills() == Fills.BOTTOM_RIGHT) shape.setFills(Fills.TOP_RIGHT);
+		    				
+		    				if (shape.getFills() == Fills.RIGHT) shape.setFills(Fills.TOP);
+		    				else if (shape.getFills() == Fills.TOP) shape.setFills(Fills.LEFT);
+		    				else if (shape.getFills() == Fills.LEFT) shape.setFills(Fills.BOTTOM);
+		    				else if (shape.getFills() == Fills.BOTTOM) shape.setFills(Fills.RIGHT);
+		    				
+		    				
+		    				rotation -= 90;
+		    			}
+		    			
+		    			System.out.println("Fill has been updated to: " + shape.getFills());
+	    			}
+	    			
 	    			shape.setRotation(t.getRotation());
 	    		}
 	    		
@@ -701,6 +775,7 @@ public class Agent {
 				}
 				
 				if (t.getTransformation() == Transformations.HALF_FILL) {
+					System.out.println("Setting fill to " + t.getFillsB());
 					shape.setFills(t.getFillsB());
 				}
 	    	}    		
@@ -817,9 +892,6 @@ public class Agent {
     		}
 		}
     	
-		// TODO: Even if we are deleting then adding a shape, we still care about transformations like changing region, etc.
-		
-		
     	// Create transformations for every shape in d1
     	for (Map.Entry<Integer, Integer> entry : mapping.entrySet()) {
     	    Integer key = entry.getKey();
@@ -865,7 +937,7 @@ public class Agent {
     	// then only check for rotation there isn't a mirroring transformation occurring 
     	
     	// Check if shapes are mirrors of each other, don't bother with squares/circles
-    	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE) {
+    	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE && s1.getShape() != Shapes.PLUS) {
     		
     		System.out.println("Checking if this is a mirroring");
     		
@@ -909,7 +981,7 @@ public class Agent {
     		}
     		
     		if (s1.getFills() != s2.getFills()) {
-    			transformations.add(new Transformation(s1.getFills(), s2.getFills()));
+    			transformations.add(new Transformation(indexOfShape, s1.getFills(), s2.getFills()));
     		}
 			
     	}
@@ -926,21 +998,31 @@ public class Agent {
 		return transformations;
     }
     
-    private void rotateDiagram(Diagram d, int rotation) {
+    private Shape rotateShape(Shape shape, int rotation) {
     	
     	if (rotation % 90 != 0) {
     		System.out.println("Can't rotate unless a factor of 90 degrees");
+    		return null;
     	}
     	
     	int degreesLeft = rotation;
-   
+    	
+    	boolean[][] matrix = shape.getShapeMatrix();
+    	while (degreesLeft > 0) {
+    		matrix = rotateMatrix90Degrees(matrix);
+    		degreesLeft -= 90;
+    	}
+    	    
+    	Shape newShape = new Shape();
+    	newShape.setShapeMatrix(matrix);
+    	return newShape;
     }
     
-    private void rotateDiagram90Degrees(Diagram d) {
+    private boolean[][] rotateMatrix90Degrees(boolean[][] matrix) {
     	
     	// TODO: Is it just a rotation of the first shape
 		
-    	System.out.println("Rotating " + d.getName());
+    	System.out.println("Rotating ");
     	
 		// a b c	h d a
 		// d e f    i e b
@@ -958,16 +1040,7 @@ public class Agent {
     	// i: [2. 1] to [1, 0]
     	// j: [2, 2] to [2, 0]
     	
-    	for (int y = 0; y < 184; y++) {
-			System.out.println("");
-			for (int x = 0; x < 184; x++) {
-				if (d.getMatrix()[x][y]) {
-					System.out.print("X");
-				} else {
-					System.out.print("_");
-				}
-			}
-		}
+    	// printMatrix(matrix)
     	
     	boolean[][] rotatedMatrix = new boolean[184][184];
     	
@@ -975,22 +1048,15 @@ public class Agent {
 		for (int y = 0; y < 184; y++) {
 			for (int x = 0; x < 184; x++) {
 				
-				if (d.getMatrix()[x][y]) {
+				if (matrix[x][y]) {
 					rotatedMatrix[y][184 - 1 - x] = true;
 				}
 			}
 		}
     	
-		for (int y = 0; y < 184; y++) {
-			System.out.println("");
-			for (int x = 0; x < 184; x++) {
-				if (rotatedMatrix[x][y]) {
-					System.out.print("X");
-				} else {
-					System.out.print("_");
-				}
-			}
-		}
+		// printMatrix(rotatedMatrix);
+		
+		return rotatedMatrix;
     }
     
     private Shape buildShape(boolean[][] matrix, Shape shape) {
@@ -1024,7 +1090,7 @@ public class Agent {
     	
     	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " 
     			+ shape.getTexture().toString() + ",  Region: " + shape.getRegion() + ", HalfFill: " + shape.getFills() 
-    			+ ", Center (" + shape.getCenter().getX() + ", " + shape.getCenter().getY() + "), Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
+    			+ ", Rotation: " + shape.getRotation() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
     	return shape;
     }
     
@@ -1037,6 +1103,13 @@ public class Agent {
     	int topCount = 0;
     	int bottomCount = 0;
     	
+    	int topRightCount = 0;
+    	int topLeftCount = 0;
+    	int bottomRightCount = 0;
+    	int bottomLeftCount = 0;
+    	
+    			
+    	
     	// if left full and right empty then left fill
     	for (int i = 0; i < 184; i++) {
     		for (int j = 0; j < 184; j++) {
@@ -1046,6 +1119,11 @@ public class Agent {
     				if (i >= 92) rightCount++;
     				if (j < 92) topCount++;
     				if (j >= 92) bottomCount++;
+    				
+    				if (i < 92 && j < 92) topLeftCount++;
+    				if (i < 92 && j >= 92) bottomLeftCount++;
+    				if (i >= 92 && j < 92) topRightCount++;
+    				if (i >= 92 && j >= 92) bottomRightCount++;
     			}
     		}
     	}
@@ -1055,8 +1133,18 @@ public class Agent {
     	System.out.println("Treshold = " + treshold);
     	System.out.println("LeftCount: " + leftCount + ", RightCount: " + rightCount);
     	System.out.println("TopCount: " + topCount + ", BottomCount: " + bottomCount);
+    	System.out.println("TopRightCount: " + topRightCount + ", TopLeftCount: " + topLeftCount);
+    	System.out.println("BottomRightCount: " + bottomRightCount + ", BottomLeftCount: " + bottomLeftCount);
     	
-    	if (leftCount > treshold) {
+    	if (rightCount > treshold && bottomCount > treshold) {
+    		shape.setFills(Fills.BOTTOM_RIGHT);
+    	} else if (rightCount > treshold && topCount > treshold) {
+    		shape.setFills(Fills.TOP_RIGHT);
+    	} else if (leftCount > treshold && bottomCount > treshold) {
+    		shape.setFills(Fills.BOTTOM_LEFT);
+    	} else if (leftCount > treshold && topCount > treshold) {
+    		shape.setFills(Fills.TOP_LEFT);
+    	} else if (leftCount > treshold) {
     		shape.setFills(Fills.LEFT);
     	} else if (rightCount > treshold) {
     		shape.setFills(Fills.RIGHT);
@@ -1064,6 +1152,18 @@ public class Agent {
     		shape.setFills(Fills.TOP);
     	} else if (bottomCount > treshold) {
     		shape.setFills(Fills.BOTTOM);
+    	}  
+    	
+    	// TODO: This is a hacky fix to solve square shapes with diagonal lines
+    	if ( (shape.getShape() == Shapes.CIRCLE || shape.getShape() == Shapes.SQUARE) && shape.isCentered()
+    			&& shape.getFills() != Fills.TOP && shape.getFills() != Fills.BOTTOM && shape.getFills() != Fills.LEFT && shape.getFills() != Fills.RIGHT) {
+    		
+    		if ((topRightCount + bottomLeftCount) > (topLeftCount + bottomRightCount + 100)) {
+    			shape.setRotation(0);
+    		} else if ((topLeftCount + bottomRightCount) > (topRightCount + bottomLeftCount + 100)) {
+    			shape.setRotation(90);
+    		} 
+    		
     	}
     }
     
