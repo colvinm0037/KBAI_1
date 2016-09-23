@@ -452,7 +452,7 @@ public class Agent {
     	//  Maybe issues with not recognizing other basic shapes like diamond, octagon
     	
     	    	
-    	//if (!( problem.getName().equals("Basic Problem B-09"))) return -1;
+    	if (!( problem.getName().equals("Basic Problem B-11"))) return -1;
 
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
@@ -1048,21 +1048,18 @@ public class Agent {
 			}
 		}
 		
-//		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
-//		System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
-//		System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
-//		System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
+		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
+		System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
+		System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
+		System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
     	
     	discoverShapeType(shape);
     	shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
     	shape.setRegion(findRegion(shape));
-    	//determineShapeFill(shape);
     	determineShapeFill(shape);
     	discoverHalfFill(shape);
-    	
-    	System.out.println("** ** * " + isShapeSolid(shape));
     	
     	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " 
     			+ shape.getTexture().toString() + ",  Region: " + shape.getRegion() + ", HalfFill: " + shape.getFills() 
@@ -1103,12 +1100,6 @@ public class Agent {
     	}
     	
     	double treshold = count * .67;
-    	
-    	System.out.println("Treshold = " + treshold);
-    	System.out.println("LeftCount: " + leftCount + ", RightCount: " + rightCount);
-    	System.out.println("TopCount: " + topCount + ", BottomCount: " + bottomCount);
-    	System.out.println("TopRightCount: " + topRightCount + ", TopLeftCount: " + topLeftCount);
-    	System.out.println("BottomRightCount: " + bottomRightCount + ", BottomLeftCount: " + bottomLeftCount);
     	
     	if (rightCount > treshold && bottomCount > treshold) {
     		shape.setFills(Fills.BOTTOM_RIGHT);
@@ -1231,10 +1222,6 @@ public class Agent {
 						count++;
 					}
 				}
-					
-				// TODO: Fill is broken for plus signs
-				
-				System.out.println("The Special Count: " + count);
 			
 				if (count < 7) {
 					shape.setRotation(45);
@@ -1307,6 +1294,21 @@ public class Agent {
 				}
 			}
 			
+			// It might actually be a diamond 
+			int count = 0;
+			for (int j = 0; j < 184; j++) {
+				if (shape.getShapeMatrix()[j][shape.getTopMostPixel().getY()]) {
+					count++;
+				}
+			}
+						
+			// If it is a diamond then it will only have a couple pixels in it's top row
+			if (count < 5) {
+				System.out.println("Shape is DIAMOND");
+				shape.setShape(Shapes.DIAMOND);
+				return shape;
+			}
+			
 			// Else it is a Circle
 			System.out.println("Shape is CIRCLE");
 			shape.setShape(Shapes.CIRCLE);
@@ -1366,6 +1368,32 @@ public class Agent {
 			return shape;
 		}       				
 	
+		// Heart
+		// TODO: this only works for 0 rotation Heart
+		if ((shape.getTopMostPixel().getX() < shape.getBottomMostPixel().getX() - 10) 
+				&& compareVals(shape.getRightMostPixel().getY(), shape.getLeftMostPixel().getY())) {
+			
+ 
+			int count = 0;
+			for (int j = 0; j < 184; j++) {
+				if (shape.getShapeMatrix()[j][shape.getBottomMostPixel().getY()]) {
+					count++;
+				}
+			}
+				
+			System.out.println("SPECIALCOUNT: " + count);
+			
+			// If it is a diamond then it will only have a couple pixels in it's top row
+			if (count < 5) {
+				System.out.println("Shape is HEART");
+				shape.setShape(Shapes.HEART);
+				return shape;
+			}
+		}
+    	
+		
+		
+		
 		// TODO: Add logic for basic rectangle
 		
 		//   x
@@ -1415,6 +1443,21 @@ public class Agent {
     		expectedPixelCount = (int) (shape.getHeight() * shape.getWidth() * .5);
     	} else if (shape.getShape() == Shapes.TRIANGLE) {
     		expectedPixelCount = (int) (shape.getHeight() * shape.getWidth() * .5);
+    	} else if (shape.getShape() == Shapes.DIAMOND) {
+    		expectedPixelCount = (int) (shape.getWidth() * shape.getWidth() * .5);
+    	} else if (shape.getShape() == Shapes.PLUS) {
+    		
+    		int edgeWidth = 0;
+			for (int j = 0; j < 184; j++) {
+				if (shape.getShapeMatrix()[j][shape.getTopMostPixel().getY()]) {
+					edgeWidth++;
+				}
+			}
+						
+			// TODO: If is is rotated 45 degrees then this won't work
+			
+    		expectedPixelCount = (edgeWidth * shape.getWidth() * 2) - (edgeWidth*edgeWidth);
+			
     	} else {
     		
     		// Otherwise if the pixel count is over 40% the bounding box then call it solid
@@ -1423,7 +1466,7 @@ public class Agent {
     	
     	// triangle = length*width / 2
     	boolean isSolid = pixelCount >= expectedPixelCount - areaDelta; 
-    	System.out.println("PixelCount: " + pixelCount + ", expectedPixelCount: " + expectedPixelCount);
+    	//System.out.println("PixelCount: " + pixelCount + ", expectedPixelCount: " + expectedPixelCount);
     	return isSolid;
     }
     
