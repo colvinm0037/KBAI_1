@@ -460,11 +460,8 @@ public class Agent {
     	// TODO: PACMAN Shapes are considered unknown when they have 45 degree rotations     	
     	
     	// 1 - Star and pentagon are same type of unknown
-    	// 5 - Half fills are fucked in problem 5, since they aren't centered
-    	// 9 - Hexagons are circles, 
     	
-    	
-    	if (!( problem.getName().equals("Basic Problem B-11"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem B-08"))) return -1;
 
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
@@ -1085,11 +1082,12 @@ public class Agent {
 		System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
 		System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
     	
-    	discoverShapeType(shape);
-    	shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
+		shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
     	shape.setRegion(findRegion(shape));
+    	
+    	discoverShapeType(shape);
     	determineShapeFill(shape);
     	discoverHalfFill(shape);
     	
@@ -1102,6 +1100,11 @@ public class Agent {
     // TODO: This is a hacky fix designed to help solve problem B-08 with half filled objects
     private void discoverHalfFill(Shape shape) {
     	
+    	// If the shape is solid then clearly can't be half-filled
+    	if (shape.isSolid()) {
+    		return;
+    	}
+    	
     	int count = countPixels(shape);
     	int leftCount = 0;
     	int rightCount = 0;
@@ -1113,20 +1116,28 @@ public class Agent {
     	int bottomRightCount = 0;
     	int bottomLeftCount = 0;
     	  	
+    	int xLine = 92;
+    	int yLine = 92;
+    	
+    	if (!shape.isCentered()) {
+    		xLine = shape.getCenter().getX();
+    		yLine = shape.getCenter().getY();
+    	}
+    	
     	// if left full and right empty then left fill
     	for (int i = 0; i < 184; i++) {
     		for (int j = 0; j < 184; j++) {
     			if (shape.getShapeMatrix()[i][j]) {
     				
-    				if (i < 92) leftCount++;
-    				if (i >= 92) rightCount++;
-    				if (j < 92) topCount++;
-    				if (j >= 92) bottomCount++;
+    				if (i < xLine) leftCount++;
+    				if (i >= xLine) rightCount++;
+    				if (j < yLine) topCount++;
+    				if (j >= yLine) bottomCount++;
     				
-    				if (i < 92 && j < 92) topLeftCount++;
-    				if (i < 92 && j >= 92) bottomLeftCount++;
-    				if (i >= 92 && j < 92) topRightCount++;
-    				if (i >= 92 && j >= 92) bottomRightCount++;
+    				if (i < xLine && j < yLine) topLeftCount++;
+    				if (i < xLine && j >= yLine) bottomLeftCount++;
+    				if (i >= xLine && j < yLine) topRightCount++;
+    				if (i >= xLine && j >= yLine) bottomRightCount++;
     			}
     		}
     	}
@@ -1344,7 +1355,20 @@ public class Agent {
 				return shape;
 			}
 			
+			System.out.println("WIDTH: " + shape.getWidth());
+			System.out.println("LEFTMOST: " + shape.getLeftMostPixel().getX());
+			System.out.println("CENTER: " + (shape.getLeftMostPixel().getX() + (shape.getWidth() / 2)));
+			
 			// It might actually be a Octagon
+			// Check to see if both the top and bottom most pixels are left of center
+			if ( (shape.getTopMostPixel().getX() < shape.getLeftMostPixel().getX() + (shape.getWidth() / 2) - DELTA)
+					&& (shape.getBottomMostPixel().getX() < shape.getLeftMostPixel().getX() + (shape.getWidth() / 2) - DELTA) ) {
+				
+				System.out.println("Shape is an OCTAGON");
+				shape.setShape(Shapes.OCTAGON);
+				return shape;
+			}
+			
 			
 			// Else it is a Circle
 			System.out.println("Shape is CIRCLE");
