@@ -1,6 +1,5 @@
 package ravensproject;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
@@ -42,7 +41,12 @@ public class Agent {
     public enum Shapes {
     	
     	NONE,
-    	UNKNOWN,
+    	UNKNOWN_1,
+    	UNKNOWN_2,
+    	UNKNOWN_3,
+    	UNKNOWN_4,
+    	UNKNOWN_5,
+    	UNKNOWN_6,
     	SQUARE,
     	CIRCLE,
     	TRIANGLE,
@@ -408,7 +412,9 @@ public class Agent {
 		}
 		
     }
-         
+        
+    private List<Shape> unknownShapes = new ArrayList<Shape>();
+    
     /**
      * The primary method for solving incoming Raven's Progressive Matrices.
      * For each problem, your Agent's Solve() method will be called. At the
@@ -451,7 +457,13 @@ public class Agent {
     	//   Problem 8, with half fills
     	//  Maybe issues with not recognizing other basic shapes like diamond, octagon
     	
-    	    	
+    	// TODO: PACMAN Shapes are considered unknown when they have 45 degree rotations     	
+    	
+    	// 1 - Star and pentagon are same type of unknown
+    	// 5 - Half fills are fucked in problem 5, since they aren't centered
+    	// 9 - Hexagons are circles, 
+    	
+    	
     	if (!( problem.getName().equals("Basic Problem B-11"))) return -1;
 
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
@@ -469,6 +481,8 @@ public class Agent {
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	return Integer.parseInt(chosenAnswer);    	
     }
+    
+    
     
     private void buildShapesInDiagrams(HashMap<String, Diagram> diagramList) {
     	
@@ -1008,6 +1022,24 @@ public class Agent {
     	    
     	Shape newShape = new Shape();
     	newShape.setShapeMatrix(matrix);
+    	
+    	// When looping through pixels we start at top left and work right and down
+		for (int j = 0; j < 184; j++) {
+			for (int i = 0; i < 184; i++) {
+				if (matrix[i][j]) {
+    				if (j > newShape.getBottomMostPixel().getY()) newShape.setBottomMostPixel(new Pixel(i, j));
+    				if (j < newShape.getTopMostPixel().getY()) newShape.setTopMostPixel(new Pixel(i, j));
+    				if (i < newShape.getLeftMostPixel().getX()) newShape.setLeftMostPixel(new Pixel(i, j));
+    				if (i > newShape.getRightMostPixel().getX()) newShape.setRightMostPixel(new Pixel(i, j));		
+				}
+			} 
+		}
+    	
+//		System.out.println("TopMost: (" + newShape.getTopMostPixel().getX() + ", " + newShape.getTopMostPixel().getY() + ")");
+//		System.out.println("BottomMost: (" + newShape.getBottomMostPixel().getX() + ", " + newShape.getBottomMostPixel().getY() + ")");
+//		System.out.println("LeftMost: (" + newShape.getLeftMostPixel().getX() + ", " + newShape.getLeftMostPixel().getY() + ")");
+//		System.out.println("RightMost: (" + newShape.getRightMostPixel().getX() + ", " + newShape.getRightMostPixel().getY() + ")");
+		
     	return newShape;
     }
     
@@ -1177,6 +1209,9 @@ public class Agent {
 			int rowValue = 0;
 			int columnValue = 0;
 			
+			// TODO: Octagons are considered circles
+			// TODO: Pacmans are considered unknown if they have a 45 degree rotation
+			
 			// Is there any pixel above the leftMost and to the left of TopMost?
 			for (int row = 0; row < shape.getLeftMostPixel().getY() - 5; row++) {
 				for (int column = 0; column < shape.getTopMostPixel().getX() - 5; column++) {
@@ -1211,7 +1246,6 @@ public class Agent {
 
 			System.out.println("IsPlusSign: " + isPlusSign + ", isMirroredPlus: " + isMirroredPlus);
 			if (isPlusSign && isMirroredPlus) {
-				System.out.println("Shape is PLUS");
 				shape.setShape(Shapes.PLUS);
 				
 				int count = 0;
@@ -1226,7 +1260,8 @@ public class Agent {
 				if (count < 7) {
 					shape.setRotation(45);
 				}
-				
+
+				System.out.println("Shape is PLUS with rotation: " + shape.getRotation());
 				return shape;
 			} else  if (isPlusSign && !isMirroredPlus){
 				System.out.println("Shape is PACMAN with Zero rotation");
@@ -1308,6 +1343,8 @@ public class Agent {
 				shape.setShape(Shapes.DIAMOND);
 				return shape;
 			}
+			
+			// It might actually be a Octagon
 			
 			// Else it is a Circle
 			System.out.println("Shape is CIRCLE");
@@ -1391,9 +1428,6 @@ public class Agent {
 			}
 		}
     	
-		
-		
-		
 		// TODO: Add logic for basic rectangle
 		
 		//   x
@@ -1411,10 +1445,82 @@ public class Agent {
     	
 		// TODO: Logic for other shapes, Heart, Star, 
 		
-		// TODO: Is the shape hollow or solid or striped?
+		// Logic for pacmans with 45 degree rotations
+		// xx
+		//  xx
+		// xx
 		
-		System.out.println("Unknown Shape");
-		shape.setShape(Shapes.UNKNOWN);
+//		TopMost: (85, 28)
+//		BottomMost: (85, 156)
+//		LeftMost: (47, 46)
+//		RightMost: (156, 88)
+		
+//		// Open on the left side
+//		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX())) {
+//			
+//			boolean foundPixel = false;
+//			
+//			for (int i = 0; i < shape.getTopMostPixel().getX(); i++) {
+//					
+//					if (shape.getShapeMatrix()[i][shape.getRightMostPixel()]) {
+//						System.out.println(i + ", " + j);
+//					}
+//					
+//				
+//			}
+//			
+//			
+//			
+//			System.out.println("Shape is Equalatiral Triangle");
+//			shape.setShape(Shapes.TRIANGLE);
+//			return shape;
+//		}
+		
+		
+		
+		// TODO: If it is an Unknown Shape, then add it to a list of unknown shapes
+		System.out.println("This is going to be an unknown shape");
+		for (Shape unknown : unknownShapes) {
+			
+			int rotation = 0;
+			while (rotation < 360) {
+		
+				System.out.println("ROTATING: " + rotation);
+				Shape rotatedShape = rotateShape(shape, rotation);
+				
+				
+				// If this shape matches one the unknown shapes then use that
+				if (compareVals(rotatedShape.getBottomMostPixel().getX(), unknown.getBottomMostPixel().getX()) 
+						&& compareVals(rotatedShape.getBottomMostPixel().getY(), unknown.getBottomMostPixel().getY())
+						&& compareVals(rotatedShape.getTopMostPixel().getX(), unknown.getTopMostPixel().getX())
+						&& compareVals(rotatedShape.getTopMostPixel().getY(), unknown.getTopMostPixel().getY())
+						&& compareVals(rotatedShape.getLeftMostPixel().getX(), unknown.getLeftMostPixel().getX())
+						&& compareVals(rotatedShape.getLeftMostPixel().getY(), unknown.getLeftMostPixel().getY())
+						&& compareVals(rotatedShape.getRightMostPixel().getX(), unknown.getRightMostPixel().getX())
+						&& compareVals(rotatedShape.getRightMostPixel().getY(), unknown.getRightMostPixel().getY()) ) {
+							
+							System.out.println("Setting shape type to " + unknown.getShape() + " With Rotation: " + rotation);
+							shape.setShape(unknown.getShape());
+							shape.setRotation(rotation);
+							return shape;
+					
+				}
+				
+		
+				rotation += 90;
+			}
+		}
+		
+		// TODO: Must be a better way to do this
+		if (unknownShapes.size() == 0) shape.setShape(Shapes.UNKNOWN_1);
+		else if (unknownShapes.size() == 1) shape.setShape(Shapes.UNKNOWN_2);
+		else if (unknownShapes.size() == 2) shape.setShape(Shapes.UNKNOWN_3);
+		else if (unknownShapes.size() == 3) shape.setShape(Shapes.UNKNOWN_4);
+		else if (unknownShapes.size() == 4) shape.setShape(Shapes.UNKNOWN_5);
+		else shape.setShape(Shapes.UNKNOWN_6);
+		
+		unknownShapes.add(shape);
+		System.out.println("UNKNOWN SHAPE: " + shape.getShape() + " with rotation: " + shape.getRotation());
     	return shape;
     }
     
