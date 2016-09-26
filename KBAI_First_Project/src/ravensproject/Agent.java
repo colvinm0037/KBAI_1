@@ -459,10 +459,17 @@ public class Agent {
     	
     	// TODO: PACMAN Shapes are considered unknown when they have 45 degree rotations     	
     	
+    	// Basic Problems
     	// 1 - Star and pentagon are same type of unknown
     	
-    	//if (!( problem.getName().equals("Basic Problem B-08"))) return -1;
+    	// Challenge Problems
+    	// 1 - Triangles only work with zero rotation
+    	
+    	//if (!( problem.getName().equals("Basic Problem B-05"))) return -1;
+    	if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
 
+    	
+    	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
@@ -684,6 +691,8 @@ public class Agent {
     	
     	System.out.println("\n---Beginning generateSolution to generate our final answer!");
     	
+    	// TODO: If there is only one shape A, then rotation should be applied to all shapes in D
+    	
     	Diagram solution = new Diagram();
     	List<Shape> shapeList = new ArrayList<Shape>();
     	solution.setName("D");
@@ -727,7 +736,7 @@ public class Agent {
 	    
     			System.out.println(t.getTransformation().toString());
     			
-    			if (t.getIndexOfShape() != i) continue;
+    			if (t.getIndexOfShape() != i && !(A.getShapeList().size() == 1 && t.getTransformation() == Transformations.ROTATION)) continue;
     			
     			// TODO: Mirroring overwrites things, might cause issues
     			
@@ -737,7 +746,7 @@ public class Agent {
     				
     				Textures texture = shape.getTexture();
     				shape = new Shape();
-    				buildShape(mirroredXWise.getShapeMatrix(), shape);
+    				shape = buildShape(mirroredXWise.getShapeMatrix(), shape);
     				shape.setTexture(texture);
     			}
     			
@@ -747,7 +756,7 @@ public class Agent {
     				
     				Textures texture = shape.getTexture();
     				shape = new Shape();
-    				buildShape(mirroredYWise.getShapeMatrix(), shape);
+    				shape = buildShape(mirroredYWise.getShapeMatrix(), shape);
     				shape.setTexture(texture);
     			}	
     	    		
@@ -781,7 +790,8 @@ public class Agent {
 	    		}
 	    		
 	    		if (t.getTransformation() == Transformations.REGION) {
-	    			shape.setRegion((shape.getRegion() + t.getRegionB()) % 4);
+	    			//shape.setRegion((shape.getRegion() + t.getRegionB()) % 4);
+	    			shape.setRegion(t.getRegionB());
 	    		}
 	
 				if (t.getTransformation() == Transformations.SIZE) {
@@ -857,49 +867,60 @@ public class Agent {
     	}
     	
     	Map<Integer, Integer> mapping = new HashMap<Integer, Integer>();
-		List<Integer> matchedShapes = new ArrayList<Integer>();
+		List<Integer> matchedShapes = new ArrayList<Integer>(); // Contains the shapes in d2 that have been mapped
     	    		
 		// In terms of building a mapping, an object can move position, rotate, or change texture
 			
 		// TODO: For now, don't worry about shapes changing size
+		// TODO: If there is only one shape in each diagram and they are mirrors of each other then we should skip 
 		
-		// For each shape in d1
-		for (int i = 0; i < d1.getShapeList().size(); i++) {
+//		if (d1.getShapeList().size() == 1 && d2.getShapeList().size() == 1) {
+//			
+//			System.out.println("Both diagrams only have one shape");
+//			mapping.put(0, 0);
+//			matchedShapes.add(0);
+//			
+//			
+//		} else {
 		
-			Shape baseShape = d1.getShapeList().get(i);
+			// For each shape in d1
+			for (int i = 0; i < d1.getShapeList().size(); i++) {
 			
-			int indexOfBestMatch = 0;
-    		Shape partnerShape = null;
-			
-    		// Look at all shapes in d2
-    		for (int j = 0; j < d2.getShapeList().size(); j++) {
-    			
-    			// If we have already matched up this shape then skip it
-    			if (matchedShapes.contains(j)) continue;
-    			
-    			Shape compareShape = d2.getShapeList().get(j);
-    			    			
-    			// If the shape types match then map them
-    			if (baseShape.getShape() == compareShape.getShape()) {
-    				
-    				// Are they about the same size?
-    				if ( (Math.abs(baseShape.getWidth() - compareShape.getWidth()) < 5) 
-    						&& (Math.abs(baseShape.getHeight() - compareShape.getHeight()) < 5)) {	    					
-    					partnerShape = compareShape;
-    					indexOfBestMatch = j;
-    				}
-     			}
-    		}
-    		
-    		if (partnerShape != null) {
-    			matchedShapes.add(indexOfBestMatch);
-    			mapping.put(i, indexOfBestMatch);
-    			
-    		} else {
-    			mapping.put(i, -1);
-    		}
-		}
-    	
+				Shape baseShape = d1.getShapeList().get(i);
+				
+				int indexOfBestMatch = 0;
+	    		Shape partnerShape = null;
+				
+	    		// Look at all shapes in d2
+	    		for (int j = 0; j < d2.getShapeList().size(); j++) {
+	    			
+	    			// If we have already matched up this shape then skip it
+	    			if (matchedShapes.contains(j)) continue;
+	    			
+	    			Shape compareShape = d2.getShapeList().get(j);
+	    			    			
+	    			// If the shape types match then map them
+	    			if (baseShape.getShape() == compareShape.getShape()) {
+	    				
+	    				// Are they about the same size?
+	    				if ( (Math.abs(baseShape.getWidth() - compareShape.getWidth()) < 5) 
+	    						&& (Math.abs(baseShape.getHeight() - compareShape.getHeight()) < 5)) {	    					
+	    					partnerShape = compareShape;
+	    					indexOfBestMatch = j;
+	    				}
+	     			}
+	    		}
+	    		
+	    		if (partnerShape != null) {
+	    			matchedShapes.add(indexOfBestMatch);
+	    			mapping.put(i, indexOfBestMatch);
+	    			
+	    		} else {
+	    			mapping.put(i, -1);
+	    		}
+			}
+	//	}
+		
     	// Create transformations for every shape in d1
     	for (Map.Entry<Integer, Integer> entry : mapping.entrySet()) {
     	    Integer key = entry.getKey();
@@ -929,7 +950,39 @@ public class Agent {
 		if ( (d1.getShapeList().size() == 1 && d2.getShapeList().size() == 1)
 				&& (d1.getShapeList().get(0).getShape() != d2.getShapeList().get(0).getShape()) ) {
 			
-			transformations.addAll(sameShapeTransform(0, d1.getShapeList().get(0), d2.getShapeList().get(0)));
+			// Since the shapes don't match, we created a Delete transformation AND a Add transformation.
+			// However, we want to keep the other transformations, such as rotation and region changes
+			
+			boolean containsDeletes = false;
+			boolean containsMirroring = false;
+			
+			for (Transformation t : transformations) {
+				if (t.getTransformation() == Transformations.DELETESHAPE) {
+					containsDeletes = true;
+					break;
+				}
+			}
+			
+			List<Transformation> newTransforms = sameShapeTransform(0, d1.getShapeList().get(0), d2.getShapeList().get(0));
+			
+			for (Transformation t : newTransforms) {
+				if (t.getTransformation() == Transformations.MIRRORING_XAXIS 
+						|| t.getTransformation() == Transformations.MIRRORING_YAXIS) {
+					containsMirroring = true;
+					break;
+				}
+			}
+			
+			
+			if (containsDeletes && containsMirroring) {
+				
+				// This means there is only 1 shape in both diagrams. The shapes are different types, but are mirrors of each other.
+				// In this case we disregard deleting and adding shapes and only use mirroring, etc.
+				
+				transformations.clear();
+			} 
+			
+			transformations.addAll(newTransforms);
 		}
     	
     	System.out.println("DONE BUILDING TRANSFORMATIONS, returning list of size: " + transformations.size());
@@ -937,6 +990,8 @@ public class Agent {
     }
     
     private List<Transformation> sameShapeTransform(int indexOfShape, Shape s1, Shape s2) {
+    	
+    	System.out.println("STARTING SAME SHAPE TRANSFORM");
     	
     	List<Transformation> transformations = new ArrayList<Transformation>();
     	boolean isMirroring = false;
@@ -1100,8 +1155,13 @@ public class Agent {
     // TODO: This is a hacky fix designed to help solve problem B-08 with half filled objects
     private void discoverHalfFill(Shape shape) {
     	
-    	// If the shape is solid then clearly can't be half-filled
-    	if (shape.isSolid()) {
+    	// If the shape is solid then clearly can't be half-filled. If it is unknown then don't bother.
+    	if (shape.isSolid() || shape.getShape() == Shapes.UNKNOWN_1
+    			|| shape.getShape() == Shapes.UNKNOWN_2
+    			|| shape.getShape() == Shapes.UNKNOWN_3
+    			|| shape.getShape() == Shapes.UNKNOWN_4
+    			|| shape.getShape() == Shapes.UNKNOWN_5
+    			|| shape.getShape() == Shapes.UNKNOWN_6) {
     		return;
     	}
     	
@@ -1143,6 +1203,13 @@ public class Agent {
     	}
     	
     	double treshold = count * .67;
+    	
+//    	System.out.println("Treshold: " + treshold);
+//    	System.out.println("TotalCount: " + count);
+//    	System.out.println("LeftCount: " + leftCount);
+//    	System.out.println("RightCount: " + rightCount);
+//    	System.out.println("TopCount: " + topCount);
+//    	System.out.println("BottomCount: " + bottomCount);
     	
     	if (rightCount > treshold && bottomCount > treshold) {
     		shape.setFills(Fills.BOTTOM_RIGHT);
@@ -1193,7 +1260,7 @@ public class Agent {
     	return region;
     }
     
-    // Take in an ambiguos shape and determine if it is a known shape
+    // Take in an ambiguous shape and determine if it is a known shape
     private Shape discoverShapeType(Shape shape) {
     	
     	// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
@@ -1220,7 +1287,6 @@ public class Agent {
 			int rowValue = 0;
 			int columnValue = 0;
 			
-			// TODO: Octagons are considered circles
 			// TODO: Pacmans are considered unknown if they have a 45 degree rotation
 			
 			// Is there any pixel above the leftMost and to the left of TopMost?
@@ -1376,128 +1442,70 @@ public class Agent {
 			return shape;
 		}
 			
-		//   x This is the default right triangle with rotation of zero
-		//  xx
-		// xxx
-		if (compareVals(shape.getTopMostPixel().getX(), shape.getRightMostPixel().getX()) 
-				&& compareVals(shape.getLeftMostPixel().getY(), shape.getBottomMostPixel().getY()) 
-				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-			
-			System.out.println("Shape is Right triangle with zero rotation");
-			shape.setShape(Shapes.RIGHT_TRIANGLE);
-			return shape;
-		}     
-		
-		// xxx
-		//  xx
-		//   x
-		// And top right is enabled
-		if (compareVals(shape.getRightMostPixel().getY(), shape.getLeftMostPixel().getY()) 
-				&& compareVals(shape.getRightMostPixel().getX(), shape.getBottomMostPixel().getX())
-				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
-			
-			System.out.println("Shape is Right triangle with 90 degree rotation");
-			shape.setShape(Shapes.RIGHT_TRIANGLE);
-			shape.setRotation(90);
-			return shape;
-		}     
-		
-		// xxx
-		// xx
-		// x
-		// And top right is enabled
-		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
-				&& compareVals(shape.getRightMostPixel().getY(), shape.getTopMostPixel().getY())
-				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
-			
-			System.out.println("Shape is Right triangle with 180 degree rotation");
-			shape.setShape(Shapes.RIGHT_TRIANGLE);
-			shape.setRotation(180);
-			return shape;
-		}     
-		
-		// x
-		// xx
-		// xxx
-		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX())
-				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY())
-				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-			
-			System.out.println("Shape is Right triangle with 270 degree rotation");
-			shape.setShape(Shapes.RIGHT_TRIANGLE);
-			shape.setRotation(270);
-			return shape;
-		}       				
-	
-		// Heart
-		// TODO: this only works for 0 rotation Heart
-		if ((shape.getTopMostPixel().getX() < shape.getBottomMostPixel().getX() - 10) 
-				&& compareVals(shape.getRightMostPixel().getY(), shape.getLeftMostPixel().getY())) {
-			
- 
-			int count = 0;
-			for (int j = 0; j < 184; j++) {
-				if (shape.getShapeMatrix()[j][shape.getBottomMostPixel().getY()]) {
-					count++;
-				}
-			}
 				
-			System.out.println("SPECIALCOUNT: " + count);
+		
+		int rotation = 0;
+		while (rotation < 360) {
+	
+			System.out.println("ROTATING: " + rotation);
+			Shape rotatedShape = rotateShape(shape, rotation);
 			
-			// If it is a diamond then it will only have a couple pixels in it's top row
-			if (count < 5) {
-				System.out.println("Shape is HEART");
-				shape.setShape(Shapes.HEART);
+			// Right triangle
+			if (compareVals(rotatedShape.getTopMostPixel().getX(), rotatedShape.getRightMostPixel().getX()) 
+					&& compareVals(rotatedShape.getLeftMostPixel().getY(), rotatedShape.getBottomMostPixel().getY()) 
+					&& !rotatedShape.getShapeMatrix()[rotatedShape.getLeftMostPixel().getX()][rotatedShape.getTopMostPixel().getY()]) {
+				
+				System.out.println("Shape is Right triangle with rotation: " + rotation);
+				shape.setShape(Shapes.RIGHT_TRIANGLE);
+				shape.setRotation(rotation);
+				return shape;
+			}     
+			
+			// Equilatiral Triangle
+			if (compareVals(rotatedShape.getBottomMostPixel().getX(), rotatedShape.getLeftMostPixel().getX()) 
+					&& compareVals(rotatedShape.getRightMostPixel().getY(), rotatedShape.getBottomMostPixel().getY())
+					&& compareVals(rotatedShape.getLeftMostPixel().getY(), rotatedShape.getBottomMostPixel().getY()) 
+					&& !rotatedShape.getShapeMatrix()[rotatedShape.getLeftMostPixel().getX()][rotatedShape.getTopMostPixel().getY()]
+					&& !rotatedShape.getShapeMatrix()[rotatedShape.getRightMostPixel().getX()][rotatedShape.getTopMostPixel().getY()]) {
+				
+				System.out.println("Shape is Equalatiral Triangle with rotation: " + rotation);
+				shape.setShape(Shapes.TRIANGLE);
+				shape.setRotation(rotation);
 				return shape;
 			}
+
+			rotation += 90;
 		}
-    	
-		// TODO: Add logic for basic rectangle
-		
-		//   x
-		//  xxx
-		// xxxxx
-		if (compareVals(shape.getBottomMostPixel().getX(), shape.getLeftMostPixel().getX()) 
-				&& compareVals(shape.getRightMostPixel().getY(), shape.getBottomMostPixel().getY()) 
-				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getTopMostPixel().getY()]
-				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()]) {
-			
-			System.out.println("Shape is Equalatiral Triangle");
-			shape.setShape(Shapes.TRIANGLE);
-			return shape;
-		}
-    	
-		// TODO: Logic for other shapes, Heart, Star, 
-		
-		// Logic for pacmans with 45 degree rotations
-		// xx
-		//  xx
-		// xx
-		
-//		TopMost: (85, 28)
-//		BottomMost: (85, 156)
-//		LeftMost: (47, 46)
-//		RightMost: (156, 88)
-		
-//		// Open on the left side
-//		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX())) {
-//			
-//			boolean foundPixel = false;
-//			
-//			for (int i = 0; i < shape.getTopMostPixel().getX(); i++) {
-//					
-//					if (shape.getShapeMatrix()[i][shape.getRightMostPixel()]) {
-//						System.out.println(i + ", " + j);
-//					}
-//					
+	
+//		rotation = 0;
+//		while (rotation < 360) {
+//	
+//			System.out.println("ROTATING: " + rotation);
+//			Shape rotatedShape = rotateShape(shape, rotation);
+//		
+//			// Heart
+//			if ((rotatedShape.getTopMostPixel().getX() < rotatedShape.getBottomMostPixel().getX() - 10) 
+//					&& compareVals(rotatedShape.getRightMostPixel().getY(), rotatedShape.getLeftMostPixel().getY())) {
 //				
+//	 
+//				int count = 0;
+//				for (int j = 0; j < 184; j++) {
+//					if (rotatedShape.getShapeMatrix()[j][rotatedShape.getBottomMostPixel().getY()]) {
+//						count++;
+//					}
+//				}
+//					
+//				System.out.println("SPECIALCOUNT: " + count);
+//				
+//				// If it is a diamond then it will only have a couple pixels in it's top row
+//				if (count < 5) {
+//					System.out.println("Shape is HEART");
+//					shape.setShape(Shapes.HEART);
+//					return shape;
+//				}
 //			}
-//			
-//			
-//			
-//			System.out.println("Shape is Equalatiral Triangle");
-//			shape.setShape(Shapes.TRIANGLE);
-//			return shape;
+//	    
+//			rotation += 90;
 //		}
 		
 		
@@ -1506,7 +1514,7 @@ public class Agent {
 		System.out.println("This is going to be an unknown shape");
 		for (Shape unknown : unknownShapes) {
 			
-			int rotation = 0;
+			rotation = 0;
 			while (rotation < 360) {
 		
 				System.out.println("ROTATING: " + rotation);
