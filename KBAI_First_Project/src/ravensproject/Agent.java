@@ -126,11 +126,13 @@ public class Agent {
     		this.sizeB = sizeB;
     	}
     	
-		public Transformation(int index, int regionA, int regionB) {
+		public Transformation(int index, List<Integer> regionA, List<Integer> regionB) {
 			this.transformation = Transformations.REGION;
 			this.indexOfShape = index;
-			this.regionA = regionA;
-			this.regionB = regionB;
+			this.regionsA.clear();
+			this.regionsB.clear();
+			this.regionsA.addAll(regionA);
+			this.regionsB.addAll(regionB);
     	}
 		
 		public Transformation(int index, int rotation) {
@@ -177,8 +179,8 @@ public class Agent {
 		private int indexOfShape = -1;
     	private Sizes sizeA;
     	private Sizes sizeB;
-    	private int regionA;
-    	private int regionB;
+    	private List<Integer> regionsA = new ArrayList<Integer>();
+    	private List<Integer> regionsB = new ArrayList<Integer>();
     	private int rotation;
     	private Textures textureA;
     	private Textures textureB;
@@ -195,11 +197,11 @@ public class Agent {
 		public Sizes getSizeB() {
 			return sizeB;
 		}
-		public int getRegionA() {
-			return regionA;
+		public List<Integer> getRegionsA() {
+			return regionsA;
 		}
-		public int getRegionB() {
-			return regionB;
+		public List<Integer> getRegionsB() {
+			return regionsB;
 		}
 		public Textures getTextureA() {
 			return textureA;
@@ -232,7 +234,8 @@ public class Agent {
     	boolean isCentered;
     	int height = 0;
     	int width = 0;
-    	int region = 0;
+    	//int region = 0;
+    	List<Integer> regions = new ArrayList<Integer>();
         Shapes shape = Shapes.NONE;    	
     	Textures texture = Textures.HOLLOW;
         Sizes size = Sizes.SMALL;
@@ -324,12 +327,10 @@ public class Agent {
 			}
 			
 		}
-		public int getRegion() {
-			return region;
+		public List<Integer> getRegions() {
+			return regions;
 		}
-		public void setRegion(int region) {
-			this.region = region;
-		}
+		
 		public Textures getTexture() {
 			return texture;
 		}
@@ -466,11 +467,13 @@ public class Agent {
     	// 1 - Triangles only work with zero rotation
     	
     	//if (!( problem.getName().equals("Basic Problem B-05"))) return -1;
-    	if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
+    	//if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
 
     	
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
+    	
+    	unknownShapes.clear();
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
     	    
@@ -791,7 +794,8 @@ public class Agent {
 	    		
 	    		if (t.getTransformation() == Transformations.REGION) {
 	    			//shape.setRegion((shape.getRegion() + t.getRegionB()) % 4);
-	    			shape.setRegion(t.getRegionB());
+	    			shape.getRegions().clear();
+	    			shape.getRegions().addAll(t.getRegionsB());
 	    		}
 	
 				if (t.getTransformation() == Transformations.SIZE) {
@@ -813,7 +817,11 @@ public class Agent {
     	
     	System.out.println("Done generating the diagram D ****");
     	for (Shape shape : solution.getShapeList()) {
-    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", HalfFills: " + shape.getFills() + ", Region: " + shape.getRegion() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());    		
+    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", HalfFills: " + shape.getFills() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
+    		System.out.print("REGIONS: ");
+    		for (Integer i : shape.getRegions()) System.out.print(i + ", ");
+    		System.out.println();
+    		
     	}
 
     	return solution;
@@ -1036,9 +1044,25 @@ public class Agent {
     		
     		// If they are both centered then don't bother with region 
     		if (!s1.isCentered() || !s2.isCentered()) {
-	    		if (s1.getRegion() != s2.getRegion()) {
-					transformations.add(new Transformation(indexOfShape, s1.getRegion(), s2.getRegion()));
-				}
+    			
+    			boolean sameRegions = false;
+    			
+    			if (s1.getRegions().size() == s2.getRegions().size()) {
+    				
+    				sameRegions = true;
+    				
+    				for (int i = 0; i < s1.getRegions().size(); i++) {
+    					
+    					if (s1.getRegions().get(i) != s2.getRegions().get(i)) {
+    						sameRegions = false;
+    						break;
+    					}
+    				}
+    				
+    				if (!sameRegions) {
+    					transformations.add(new Transformation(indexOfShape, s1.getRegions(), s2.getRegions()));
+    				}
+    			}
     		}
     		
     		if (s1.getFills() != s2.getFills()) {
@@ -1140,14 +1164,14 @@ public class Agent {
 		shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
-    	shape.setRegion(findRegion(shape));
+    	shape.getRegions().addAll(findRegion(shape));
     	
     	discoverShapeType(shape);
     	determineShapeFill(shape);
     	discoverHalfFill(shape);
     	
     	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " 
-    			+ shape.getTexture().toString() + ",  Region: " + shape.getRegion() + ", HalfFill: " + shape.getFills() 
+    			+ shape.getTexture().toString() + ", HalfFill: " + shape.getFills() 
     			+ ", Rotation: " + shape.getRotation() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
     	return shape;
     }
@@ -1242,22 +1266,81 @@ public class Agent {
     	}
     }
     
-    private int findRegion(Shape shape) {
+    private List<Integer> findRegion(Shape shape) {
     	
     	// 0 1
     	// 2 3
     	
-    	int region = 0;
+    	// 0 1 2
+    	// 3 4 5
+    	// 6 7 8
     	
-    	if (shape.getCenter().getY() >= 92) {
-    		region += 2;
-    	} 
+    	boolean[] regionsIn = new boolean[25];
     	
-    	if (shape.getCenter().getX() >= 92) {
-    		region += 1;
+    	for (int i = 0; i < 25; i++) regionsIn[i] = false;
+    	
+    //	int region = 0;
+    	
+    		for (int i = 0; i < 184; i++) {
+    	    	for (int j = 0; j < 184; j++) {
+    		
+    			if (shape.getShapeMatrix()[j][i]) {
+    				if (i < 37) {    					
+    					if (j < 37) regionsIn[0] = true;    						
+    					else if (j < 74) regionsIn[1] = true;    						
+    					else if (j < 111) regionsIn[2] = true;    						
+    					else if (j < 148) regionsIn[3] = true;
+    					else regionsIn[4] = true;    					
+    				} else if (i < 74) {
+    					if (j < 37) regionsIn[5] = true;    						
+    					else if (j < 74) regionsIn[6] = true;    						
+    					else if (j < 111) regionsIn[7] = true;    						
+    					else if (j < 148) regionsIn[8] = true;
+    					else regionsIn[9] = true;
+    				} else if (i < 111) {
+    					if (j < 37) regionsIn[10] = true;    						
+    					else if (j < 74) regionsIn[11] = true;    						
+    					else if (j < 111) regionsIn[12] = true;    						
+    					else if (j < 148) regionsIn[13] = true;
+    					else regionsIn[14] = true;
+    				} else if (i < 148) {
+    					if (j < 37) regionsIn[15] = true;    						
+    					else if (j < 74) regionsIn[16] = true;    						
+    					else if (j < 111) regionsIn[17] = true;    						
+    					else if (j < 148) regionsIn[18] = true;
+    					else regionsIn[19] = true;
+    				} else {
+     					if (j < 37) regionsIn[20] = true;    						
+     					else if (j < 74) regionsIn[21] = true;    						
+     					else if (j < 111) regionsIn[22] = true;    						
+     					else if (j < 148) regionsIn[23] = true;
+     					else regionsIn[24] = true;
+     				}    	
+    			}
+    		}
+    	}
+    	System.out.print("REGIONS IN: " );
+    	
+    	List<Integer> regions = new ArrayList<Integer>();
+    	
+    	for (int k = 0; k < 25; k++) {
+    		if (regionsIn[k]) {
+    			System.out.print(k + ", ");
+    			regions.add(k);
+    		}
     	}
     	
-    	return region;
+    	System.out.println();
+    	
+//    	if (shape.getCenter().getY() >= 92) {
+//    		region += 2;
+//    	} 
+//    	
+//    	if (shape.getCenter().getX() >= 92) {
+//    		region += 1;
+//    	}
+    	
+    	return regions;
     }
     
     // Take in an ambiguous shape and determine if it is a known shape
