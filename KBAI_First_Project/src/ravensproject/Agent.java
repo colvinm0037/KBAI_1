@@ -90,13 +90,17 @@ public class Agent {
     	NONE,
     	SIZE,
     	REGION,
+    	REGION_X,
+    	REGION_Y,
     	ROTATION,
     	TEXTURE,
     	ADDSHAPE,
     	DELETESHAPE,
     	MIRRORING_XAXIS,
     	MIRRORING_YAXIS,
-    	HALF_FILL
+    	HALF_FILL,
+    	SHIFT_X,
+    	SHIFT_Y
     }
     
     public class Pixel {
@@ -124,6 +128,32 @@ public class Agent {
     		this.indexOfShape = index;
     		this.sizeA = sizeA;
     		this.sizeB = sizeB;
+    	}
+    	
+//		public Transformation(int index, boolean xRegion, List<Integer> bRegions) {
+//			
+//			if (xRegion) {
+//				this.transformation = Transformations.REGION_X;
+//				this.xRegions.clear();
+//				this.xRegions.addAll(bRegions);
+//			} else {
+//				this.transformation = Transformations.REGION_Y;
+//				this.yRegions.clear();
+//				this.yRegions.addAll(bRegions);
+//			}
+//			
+//			this.indexOfShape = index;
+//    	}
+//		
+    	public Transformation(int index, boolean xShift, int centerX, int centerY) {
+    		if (xShift) {
+    			this.transformation = Transformations.SHIFT_X;
+    			this.centerX = centerX;
+    		} else {
+    			this.transformation = Transformations.SHIFT_Y;
+    			this.centerY = centerY;
+    		}
+    		this.indexOfShape = index;
     	}
     	
 		public Transformation(int index, List<Integer> regionA, List<Integer> regionB) {
@@ -175,19 +205,39 @@ public class Agent {
 			this.indexOfShape = index;
 		}
 
+    	private List<Integer> regionsA = new ArrayList<Integer>();
+    	private List<Integer> regionsB = new ArrayList<Integer>();
 		private Transformations transformation = Transformations.NONE;
 		private int indexOfShape = -1;
     	private Sizes sizeA;
     	private Sizes sizeB;
-    	private List<Integer> regionsA = new ArrayList<Integer>();
-    	private List<Integer> regionsB = new ArrayList<Integer>();
+    	private List<Integer> xRegions = new ArrayList<Integer>();
+    	private List<Integer> yRegions = new ArrayList<Integer>();
     	private int rotation;
     	private Textures textureA;
     	private Textures textureB;
     	private Shape shape;
     	private Fills fillsA;
     	private Fills fillsB;
+    	private int centerX;
+    	private int centerY;
     	
+		public int getCenterX() {
+			return centerX;
+		}
+
+		public void setCenterX(int centerX) {
+			this.centerX = centerX;
+		}
+
+		public int getCenterY() {
+			return centerY;
+		}
+
+		public void setCenterY(int centerY) {
+			this.centerY = centerY;
+		}
+
 		public Transformations getTransformation() {
 			return transformation;
 		}
@@ -197,12 +247,20 @@ public class Agent {
 		public Sizes getSizeB() {
 			return sizeB;
 		}
+		public List<Integer> getXRegions() {
+			return xRegions;
+		}
+		public List<Integer> getYRegions() {
+			return yRegions;
+		}
+		
 		public List<Integer> getRegionsA() {
 			return regionsA;
 		}
 		public List<Integer> getRegionsB() {
 			return regionsB;
 		}
+		
 		public Textures getTextureA() {
 			return textureA;
 		}
@@ -235,7 +293,11 @@ public class Agent {
     	int height = 0;
     	int width = 0;
     	//int region = 0;
+    	List<Integer> xRegions = new ArrayList<Integer>();
+    	List<Integer> yRegions = new ArrayList<Integer>();
+    	//boolean[] regions = new boolean[25];
     	List<Integer> regions = new ArrayList<Integer>();
+
         Shapes shape = Shapes.NONE;    	
     	Textures texture = Textures.HOLLOW;
         Sizes size = Sizes.SMALL;
@@ -251,7 +313,13 @@ public class Agent {
     	Pixel rightMostPixel = new Pixel(0, 0);
     	Pixel center = new Pixel(0,0);
     		
-    	public Shapes getShape() {
+    	
+    	
+    	public List<Integer> getRegions() {
+			return regions;
+		}
+
+		public Shapes getShape() {
 			return shape;
 		}
 		public void setShape(Shapes square) {
@@ -325,10 +393,12 @@ public class Agent {
 				
 				this.isCentered = true;
 			}
-			
 		}
-		public List<Integer> getRegions() {
-			return regions;
+		public List<Integer> getXRegions() {
+			return xRegions;
+		}
+		public List<Integer> getYRegions() {
+			return yRegions;
 		}
 		
 		public Textures getTexture() {
@@ -479,11 +549,11 @@ public class Agent {
     	    
     	buildShapesInDiagrams(diagramList);
     
-    	List<Transformation> transformations = buildAllTransformations(diagramList);
+    //	List<Transformation> transformations = buildAllTransformations(diagramList);
     	
-    	Diagram D = generateSolutionDiagram(diagramList.get("A"), transformations);
+    //	Diagram D = generateSolutionDiagram(diagramList.get("A"), transformations);
     	
-    	String chosenAnswer = determineFinalAnswer(diagramList, D);
+    	String chosenAnswer = determineFinalAnswer(diagramList);
     	
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	return Integer.parseInt(chosenAnswer);    	
@@ -522,6 +592,14 @@ public class Agent {
     	    	
     	// Print out transformations
     	System.out.println("These are all of the transformations from A -> B and A-> C");
+    	printTransformations(transformations, diagramList);
+    	
+    	return transformations;
+    }
+    
+    private void printTransformations(List<Transformation> transformations, HashMap<String, Diagram> diagramList) {
+    	// Print out transformations
+    	System.out.println("These are all of the transformations from A -> B and A-> C");
     	for (Transformation t : transformations) {
     		
     		String shapeName = Shapes.NONE.toString();
@@ -530,86 +608,129 @@ public class Agent {
     		}
     		System.out.println(shapeName + ", " + t.getTransformation() + ", Index: " + t.getIndexOfShape());
     	}
-    	
-    	return transformations;
     }
     
-    private String determineFinalAnswer(HashMap<String, Diagram> diagramList, Diagram D) {
+    private String determineFinalAnswer(HashMap<String, Diagram> diagramList) {
     	
     	// Compare D to all of the available solutions
+    	
+    	// Build Transformations between A->B and A->C
+    	System.out.println();
+    	List<Transformation> bTransformations = buildTransformations(diagramList.get("A"), diagramList.get("B"));
+    	printTransformations(bTransformations, diagramList);
+    	System.out.println();
+    	List<Transformation> cTransformations = buildTransformations(diagramList.get("A"), diagramList.get("C"));
+    	printTransformations(cTransformations, diagramList);
+    	
+    	List<Transformation> bcTransformations = new ArrayList<Transformation>();
+    	bcTransformations.addAll(bTransformations);
+    	bcTransformations.addAll(cTransformations);
+    	
+    	// Generate solutions by applying transformations from A->B onto C, and from A->C onto B
+    	Diagram Db = generateSolutionDiagram(diagramList.get("C"), bTransformations);
+    	Diagram Dc = generateSolutionDiagram(diagramList.get("B"), cTransformations);
+    	Diagram Dbc = generateSolutionDiagram(diagramList.get("A"), bcTransformations);
+    	
+    	System.out.println("\nComparing D to all of the available answers");
+    	
+    	ArrayList<Diagram> solutionDiagrams = new ArrayList<Diagram>();
+    	solutionDiagrams.add(Db);
+    	solutionDiagrams.add(Dc);
+
+    	boolean onlyDeletes = true;
+    	for (Transformation t : bcTransformations) {
+    		if (t.getTransformation() != Transformations.DELETESHAPE) {
+    			onlyDeletes = false;
+    			break;
+    		}
+    	}
+    	
+    	solutionDiagrams.add(Dbc);
+    	
     	String chosenAnswer = "";
     	int lowestCount = Integer.MAX_VALUE;
     	int transformationCount = 0;
     	
-    	System.out.println("\nComparing D to all of the available answers");
-    	
-    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
+    	for (int i = 0; i < 3; i++) {
+
+    		Diagram D = solutionDiagrams.get(i);
     		
-    		System.out.println("Comparing D to " + figure);
-    		
-    		if (D.isIdenticalMatch(diagramList.get(figure))) {
-    			System.out.println("***Is Identical Match");
-    			chosenAnswer = figure;
-    			break;
+    		if (i == 2) {
+    			
+    			if (!(onlyDeletes || lowestCount > 0)) {
+    				continue;
+    			} 
+    			
     		}
     		
-        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
-        	transformations2.addAll(buildTransformations(D, diagramList.get(figure)));
-        	
-        	transformationCount = transformations2.size();
-    		System.out.println("TransformationCount: " + transformationCount);
-    		System.out.println("*** These are all of the transformations from D -> " + figure);
-        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
-        	
-    		if (transformationCount < lowestCount) {
-    			lowestCount = transformationCount;
-    			chosenAnswer = figure;
-    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
-    		}    		
-    	}
-    	
-    	System.out.println("First Chosen Answer: " + chosenAnswer);
-    	
-    	// We didn't find a perfect fit
-    	if (transformationCount > 0) {
-    		
-    		System.out.println("\n\nTRYING an Alternate Strategy");
-    		
     		for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
-        		
-        		System.out.println("Comparing D to " + figure);
-        		
-        		if (D != null && D.getShapeList() != null && D.getShapeList().size() > 0) {
-        		
-        			if (D.getShapeList().get(0).getFills() != Fills.NONE) {
+	    		
+	    		System.out.println("Comparing D to " + figure);
+	    		
+	    		if (D.isIdenticalMatch(diagramList.get(figure))) {
+	    			System.out.println("***Is Identical Match");
+	    			chosenAnswer = figure;
+	    			break;
+	    		}
+	    		
+	        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+	        	transformations2.addAll(buildTransformations(D, diagramList.get(figure)));
+	        	
+	        	transformationCount = transformations2.size();
+	    		System.out.println("TransformationCount: " + transformationCount);
+	    		System.out.println("*** These are all of the transformations from D -> " + figure);
+	        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+	        	
+	    		if (transformationCount <= lowestCount) {
+	    			lowestCount = transformationCount;
+	    			chosenAnswer = figure;
+	    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+	    		}    		
+	    	}
+	    	
+	    	System.out.println("First Chosen Answer: " + chosenAnswer);
+	    	
+	    	// We didn't find a perfect fit
+	    	if (transformationCount > 0) {
+	    		
+	    		System.out.println("\n\nTRYING an Alternate Strategy");
+	    		
+	    		for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
+	        		
+	        		System.out.println("Comparing D to " + figure);
+	        		
+	        		if (D != null && D.getShapeList() != null && D.getShapeList().size() > 0) {
+	        		
+	        			if (D.getShapeList().get(0).getFills() != Fills.NONE) {
+			    			
+		    				if (D.getShapeList().get(0).getFills() == Fills.TOP_RIGHT) D.getShapeList().get(0).setFills(Fills.BOTTOM_LEFT);
+		    				else if (D.getShapeList().get(0).getFills() == Fills.TOP_LEFT) D.getShapeList().get(0).setFills(Fills.BOTTOM_RIGHT);
+		    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM_LEFT) D.getShapeList().get(0).setFills(Fills.TOP_RIGHT);
+		    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM_RIGHT) D.getShapeList().get(0).setFills(Fills.TOP_LEFT);
+		    				
+		    				if (D.getShapeList().get(0).getFills() == Fills.RIGHT) D.getShapeList().get(0).setFills(Fills.LEFT);
+		    				else if (D.getShapeList().get(0).getFills() == Fills.TOP) D.getShapeList().get(0).setFills(Fills.BOTTOM);
+		    				else if (D.getShapeList().get(0).getFills() == Fills.LEFT) D.getShapeList().get(0).setFills(Fills.RIGHT);
+		    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM) D.getShapeList().get(0).setFills(Fills.TOP);
 		    			
-	    				if (D.getShapeList().get(0).getFills() == Fills.TOP_RIGHT) D.getShapeList().get(0).setFills(Fills.BOTTOM_LEFT);
-	    				else if (D.getShapeList().get(0).getFills() == Fills.TOP_LEFT) D.getShapeList().get(0).setFills(Fills.BOTTOM_RIGHT);
-	    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM_LEFT) D.getShapeList().get(0).setFills(Fills.TOP_RIGHT);
-	    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM_RIGHT) D.getShapeList().get(0).setFills(Fills.TOP_LEFT);
-	    				
-	    				if (D.getShapeList().get(0).getFills() == Fills.RIGHT) D.getShapeList().get(0).setFills(Fills.LEFT);
-	    				else if (D.getShapeList().get(0).getFills() == Fills.TOP) D.getShapeList().get(0).setFills(Fills.BOTTOM);
-	    				else if (D.getShapeList().get(0).getFills() == Fills.LEFT) D.getShapeList().get(0).setFills(Fills.RIGHT);
-	    				else if (D.getShapeList().get(0).getFills() == Fills.BOTTOM) D.getShapeList().get(0).setFills(Fills.TOP);
-	    			
-        			}		
-        		}
-        		
-            	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
-            	transformations2.addAll(buildTransformations(D, diagramList.get(figure)));
-            	
-            	transformationCount = transformations2.size();
-        		System.out.println("TransformationCount: " + transformationCount);
-        		System.out.println("*** These are all of the transformations from D -> " + figure);
-            	for (Transformation t : transformations2) System.out.println(t.getTransformation());
-            	
-        		if (transformationCount < lowestCount) {
-        			lowestCount = transformationCount;
-        			chosenAnswer = figure;
-        			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
-        		}    		
-        	}
+	        			}		
+	        		}
+	        		
+	            	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+	            	transformations2.addAll(buildTransformations(D, diagramList.get(figure)));
+	            	
+	            	transformationCount = transformations2.size();
+	        		System.out.println("TransformationCount: " + transformationCount);
+	        		System.out.println("*** These are all of the transformations from D -> " + figure);
+	            	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+	            	
+	        		if (transformationCount <= lowestCount) {
+	        			lowestCount = transformationCount;
+	        			chosenAnswer = figure;
+	        			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+	        		}    		
+	        	}
+	    	}
     	}
     	
     	return chosenAnswer;    	
@@ -792,12 +913,31 @@ public class Agent {
 	    			shape.setRotation(t.getRotation());
 	    		}
 	    		
+//	    		if (t.getTransformation() == Transformations.REGION_X) {
+//	    			//shape.setRegion((shape.getRegion() + t.getRegionB()) % 4);
+//	    			shape.getXRegions().clear();
+//	    			shape.getXRegions().addAll(t.getXRegions());
+//	    		}
+//	    		
+//	    		if (t.getTransformation() == Transformations.REGION_Y) {
+//	    			//shape.setRegion((shape.getRegion() + t.getRegionB()) % 4);
+//	    			shape.getYRegions().clear();
+//	    			shape.getYRegions().addAll(t.getYRegions());
+//	    		}
+	
 	    		if (t.getTransformation() == Transformations.REGION) {
-	    			//shape.setRegion((shape.getRegion() + t.getRegionB()) % 4);
 	    			shape.getRegions().clear();
 	    			shape.getRegions().addAll(t.getRegionsB());
 	    		}
-	
+	    		
+	    		if (t.getTransformation() == Transformations.SHIFT_X) {
+	    			shape.setCenter(new Pixel(t.getCenterX(), shape.getCenter().getY()));
+	    		}
+	    		
+	    		if (t.getTransformation() == Transformations.SHIFT_Y) {
+	    			shape.setCenter(new Pixel(shape.getCenter().getX(), t.getCenterY()));
+	    		}
+	    		
 				if (t.getTransformation() == Transformations.SIZE) {
 					shape.setSize(t.getSizeB());
 				}
@@ -817,9 +957,12 @@ public class Agent {
     	
     	System.out.println("Done generating the diagram D ****");
     	for (Shape shape : solution.getShapeList()) {
-    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", HalfFills: " + shape.getFills() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
-    		System.out.print("REGIONS: ");
-    		for (Integer i : shape.getRegions()) System.out.print(i + ", ");
+    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + ", Center: (" + shape.getCenter().getX() + ", " + shape.getCenter().getY() + "), TEXTURE: " + shape.getTexture() + ", " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", HalfFills: " + shape.getFills() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
+    		System.out.print("X-REGIONS: ");
+    		for (Integer i : shape.getXRegions()) System.out.print(i + ", ");
+    		System.out.println();
+    		System.out.print("Y-REGIONS: ");
+    		for (Integer i : shape.getYRegions()) System.out.print(i + ", ");
     		System.out.println();
     		
     	}
@@ -1008,7 +1151,8 @@ public class Agent {
     	// then only check for rotation there isn't a mirroring transformation occurring 
     	
     	// Check if shapes are mirrors of each other, don't bother with squares/circles
-    	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE && s1.getShape() != Shapes.PLUS) {
+    	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE && s1.getShape() != Shapes.PLUS 
+    			&& s1.getShape() != Shapes.OCTAGON && s1.getShape() != Shapes.DIAMOND) {
     		
     		Shape mirroredXWise = mirrorOverXAxis(s2);
         	Shape mirroredYWise = mirrorOverYAxis(s2);
@@ -1044,6 +1188,17 @@ public class Agent {
     		
     		// If they are both centered then don't bother with region 
     		if (!s1.isCentered() || !s2.isCentered()) {
+    		
+    			
+    			if (Math.abs(s1.getCenter().getX() - s2.getCenter().getX()) > 10) {    				
+    				transformations.add(new Transformation(indexOfShape, true, s2.getCenter().getX(), -1));
+    			}
+    			
+    			if (Math.abs(s1.getCenter().getY() - s2.getCenter().getY()) > 10) {
+    				transformations.add(new Transformation(indexOfShape, false, -1, s2.getCenter().getY()));
+    			}
+    			
+    			
     			
     			boolean sameRegions = false;
     			
@@ -1059,10 +1214,53 @@ public class Agent {
     					}
     				}
     				
-    				if (!sameRegions) {
-    					transformations.add(new Transformation(indexOfShape, s1.getRegions(), s2.getRegions()));
-    				}
+    				
     			}
+    			
+    			if (!sameRegions) {
+				//	transformations.add(new Transformation(indexOfShape, s1.getRegions(), s2.getRegions()));
+				}
+    			
+    			
+//    			if (s1.getRegions() != s2.getRegions()) {
+//    				transformations.add(new Transformation(indexOfShape, true, s2.getRegions()));
+//    			}
+//    			
+    			
+    			
+//    			boolean sameXRegions = false;
+//    			boolean sameYRegions = false;
+//    			
+    		
+//    			
+//    			if (s1.getXRegions().size() == s2.getXRegions().size()) {
+//    				
+//    				sameXRegions = true;
+//    				
+//    				for (int i = 0; i < s1.getXRegions().size(); i++) {
+//    					
+//    					if (s1.getXRegions().get(i) != s2.getXRegions().get(i)) {
+//    						sameXRegions = false;
+//    						break;
+//    					}
+//    				}
+//    			}
+//    			
+//    			if (s1.getYRegions().size() == s2.getYRegions().size()) {
+//    				
+//    				sameYRegions = true;
+//    				
+//    				for (int i = 0; i < s1.getYRegions().size(); i++) {
+//    					
+//    					if (s1.getYRegions().get(i) != s2.getYRegions().get(i)) {
+//    						sameYRegions = false;
+//    						break;
+//    					}
+//    				}
+//    			}
+    			
+    			
+    			
     		}
     		
     		if (s1.getFills() != s2.getFills()) {
@@ -1164,7 +1362,9 @@ public class Agent {
 		shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
+    	//findRegion(shape);
     	shape.getRegions().addAll(findRegion(shape));
+
     	
     	discoverShapeType(shape);
     	determineShapeFill(shape);
@@ -1172,7 +1372,7 @@ public class Agent {
     	
     	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " 
     			+ shape.getTexture().toString() + ", HalfFill: " + shape.getFills() 
-    			+ ", Rotation: " + shape.getRotation() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
+    			+ ", Rotation: " + shape.getRotation() + ", Center: (" + shape.getCenter().getX() + ", " + shape.getCenter().getY() + "), Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
     	return shape;
     }
     
@@ -1275,7 +1475,83 @@ public class Agent {
     	// 3 4 5
     	// 6 7 8
     	
-    	boolean[] regionsIn = new boolean[25];
+//    	boolean[][] regions = new boolean[5][5];
+//    	
+//    	for (int i = 0; i < 184; i++) {
+//	    	for (int j = 0; j < 184; j++) {
+//		
+//				if (shape.getShapeMatrix()[j][i]) {
+//					
+//					if (j < 37) {    					
+//				
+//						if (i < 37) {    					
+//							regions[0][0] = true;
+//						} else if (i < 74) {
+//							regions[0][1] = true;
+//						} else if (i < 111) {
+//							regions[0][2] = true;
+//						} else if (i < 148) {
+//							regions[0][3] = true;
+//						} else {
+//							regions[0][4] = true;
+//		 				}    	
+//				
+//					} else if (j < 74) {
+//						if (i < 37) {    					
+//							regions[1][0] = true;
+//						} else if (i < 74) {
+//							regions[1][1] = true;
+//						} else if (i < 111) {
+//							regions[1][2] = true;
+//						} else if (i < 148) {
+//							regions[1][3] = true;
+//						} else {
+//							regions[1][4] = true;
+//		 				}    	
+//					} else if (j < 111) {
+//						if (i < 37) {    					
+//							regions[2][0] = true;
+//						} else if (i < 74) {
+//							regions[2][1] = true;
+//						} else if (i < 111) {
+//							regions[2][2] = true;
+//						} else if (i < 148) {
+//							regions[2][3] = true;
+//						} else {
+//							regions[2][4] = true;
+//		 				}    					
+//					} else if (j < 148) {
+//						if (i < 37) {    					
+//							regions[3][0] = true;
+//						} else if (i < 74) {
+//							regions[3][1] = true;
+//						} else if (i < 111) {
+//							regions[3][2] = true;
+//						} else if (i < 148) {
+//							regions[3][3] = true;
+//						} else {
+//							regions[3][4] = true;
+//		 				}    		
+//					} else {
+//						if (i < 37) {    					
+//							regions[4][0] = true;
+//						} else if (i < 74) {
+//							regions[4][1] = true;
+//						} else if (i < 111) {
+//							regions[4][2] = true;
+//						} else if (i < 148) {
+//							regions[4][3] = true;
+//						} else {
+//							regions[4][4] = true;
+//		 				}    		
+//	 				}
+//				}
+//			}    	
+//    	}
+//    	
+//    	shape.setRegions(regions);
+    	
+boolean[] regionsIn = new boolean[25];
     	
     	for (int i = 0; i < 25; i++) regionsIn[i] = false;
     	
@@ -1331,14 +1607,6 @@ public class Agent {
     	}
     	
     	System.out.println();
-    	
-//    	if (shape.getCenter().getY() >= 92) {
-//    		region += 2;
-//    	} 
-//    	
-//    	if (shape.getCenter().getX() >= 92) {
-//    		region += 1;
-//    	}
     	
     	return regions;
     }
@@ -1560,36 +1828,36 @@ public class Agent {
 			rotation += 90;
 		}
 	
-//		rotation = 0;
-//		while (rotation < 360) {
-//	
-//			System.out.println("ROTATING: " + rotation);
-//			Shape rotatedShape = rotateShape(shape, rotation);
-//		
-//			// Heart
-//			if ((rotatedShape.getTopMostPixel().getX() < rotatedShape.getBottomMostPixel().getX() - 10) 
-//					&& compareVals(rotatedShape.getRightMostPixel().getY(), rotatedShape.getLeftMostPixel().getY())) {
-//				
-//	 
-//				int count = 0;
-//				for (int j = 0; j < 184; j++) {
-//					if (rotatedShape.getShapeMatrix()[j][rotatedShape.getBottomMostPixel().getY()]) {
-//						count++;
-//					}
-//				}
-//					
-//				System.out.println("SPECIALCOUNT: " + count);
-//				
-//				// If it is a diamond then it will only have a couple pixels in it's top row
-//				if (count < 5) {
-//					System.out.println("Shape is HEART");
-//					shape.setShape(Shapes.HEART);
-//					return shape;
-//				}
-//			}
-//	    
-//			rotation += 90;
-//		}
+		rotation = 0;
+		while (rotation < 360) {
+	
+			System.out.println("ROTATING: " + rotation);
+			Shape rotatedShape = rotateShape(shape, rotation);
+		
+			// Heart
+			if ((rotatedShape.getTopMostPixel().getX() < rotatedShape.getBottomMostPixel().getX() - 10) 
+					&& compareVals(rotatedShape.getRightMostPixel().getY(), rotatedShape.getLeftMostPixel().getY())) {
+				
+	 
+				int count = 0;
+				for (int j = 0; j < 184; j++) {
+					if (rotatedShape.getShapeMatrix()[j][rotatedShape.getBottomMostPixel().getY()]) {
+						count++;
+					}
+				}
+					
+				System.out.println("SPECIALCOUNT: " + count);
+				
+				// If it is a diamond then it will only have a couple pixels in it's top row
+				if (count < 5) {
+					System.out.println("Shape is HEART");
+					shape.setShape(Shapes.HEART);
+					return shape;
+				}
+			}
+	    
+			rotation += 90;
+		}
 		
 		
 		
