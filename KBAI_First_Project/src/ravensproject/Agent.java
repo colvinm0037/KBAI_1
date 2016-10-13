@@ -536,10 +536,11 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem B-05"))) return -1;
+    	if (!( problem.getName().equals("Basic Problem C-05"))) return -1;
     	//if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
 
-    	
+    	boolean isThreeByThree = false;
+    	if (problem.getProblemType().equals("3x3")) isThreeByThree = true;
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
@@ -547,7 +548,7 @@ public class Agent {
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
     	    
-    	buildShapesInDiagrams(diagramList);
+    	buildShapesInDiagrams(diagramList, isThreeByThree);
     
     //	List<Transformation> transformations = buildAllTransformations(diagramList);
     	
@@ -559,14 +560,15 @@ public class Agent {
     	return Integer.parseInt(chosenAnswer);    	
     }
     
-    
-    
-    private void buildShapesInDiagrams(HashMap<String, Diagram> diagramList) {
+    private void buildShapesInDiagrams(HashMap<String, Diagram> diagramList, boolean isThreeByThree) {
     	
-    	for (String name : Arrays.asList("A", "B", "C", "1", "2", "3", "4", "5", "6")) {
+    	for (String name : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "1", "2", "3", "4", "5", "6", "7", "8")) {
     		   		
     		System.out.println("\nLOOKING AT DIAGRAM " + name);
     		Diagram diagram = diagramList.get(name);
+    		
+    		if (diagram == null) continue;
+    		
     		List<Shape> shapeList = new ArrayList<Shape>();
     		
     		List<boolean[][]> shapeMatrices = discoverShapes(diagram);
@@ -1798,7 +1800,7 @@ boolean[] regionsIn = new boolean[25];
 		int rotation = 0;
 		while (rotation < 360) {
 	
-			System.out.println("ROTATING: " + rotation);
+			//System.out.println("ROTATING: " + rotation);
 			Shape rotatedShape = rotateShape(shape, rotation);
 			
 			// Right triangle
@@ -1831,7 +1833,7 @@ boolean[] regionsIn = new boolean[25];
 		rotation = 0;
 		while (rotation < 360) {
 	
-			System.out.println("ROTATING: " + rotation);
+			//System.out.println("ROTATING: " + rotation);
 			Shape rotatedShape = rotateShape(shape, rotation);
 		
 			// Heart
@@ -1868,7 +1870,7 @@ boolean[] regionsIn = new boolean[25];
 			rotation = 0;
 			while (rotation < 360) {
 		
-				System.out.println("ROTATING: " + rotation);
+			//	System.out.println("ROTATING: " + rotation);
 				Shape rotatedShape = rotateShape(shape, rotation);
 				
 				
