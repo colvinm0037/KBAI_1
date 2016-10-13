@@ -50,6 +50,7 @@ public class Agent {
     	UNKNOWN_8,
     	UNKNOWN_9,
     	SQUARE,
+    	RECTANGLE,
     	CIRCLE,
     	TRIANGLE,
     	RIGHT_TRIANGLE,
@@ -473,7 +474,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem C-05"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem C-06"))) return -1;
     	//if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
 
     	boolean isThreeByThree = false;
@@ -1108,19 +1109,39 @@ public class Agent {
     // Take in an ambiguous shape and determine if it is a known shape
     private Shape discoverShapeType(Shape shape) {
     	
+    	if (determineIfRectangular(shape)) {}
+		else if (determineIfCircleOrRelated(shape)) {}
+    	else if (determineIfTriangle(shape)) {}
+		else if (determineIfHeart(shape)) {}
+		else {
+    		handleUnknownShape(shape);
+    	}
+		return shape;
+    }
+    
+    private boolean determineIfRectangular(Shape shape) {    	 
     	// Square: TopMost and BottomMost have same X, leftMost and RightMost have same Y
-		// And top right is neabled
-		if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
+    	// And top right is enabled    	    	
+    	if (shape.getTopMostPixel().getX() == shape.getBottomMostPixel().getX() 
 				&& shape.getTopMostPixel().getY() == shape.getRightMostPixel().getY() 
 				&& shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
+						
+			if (compareVals(shape.getWidth(), shape.getHeight())) {
+				shape.setShape(Shapes.SQUARE);
+			} else {
+				shape.setShape(Shapes.RECTANGLE);
+			}
 			
-			System.out.println("Shape is SQUARE");
-			shape.setShape(Shapes.SQUARE);
-			return shape;
-		}
-		
-		// CIRCLE, PLUS, and PACMAN sign
-		if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
+			System.out.println("SHAPE IS " + shape.getShape());
+			return true;
+		}		
+    	return false;
+    }
+    
+    // TODO: This method is a huge giant mess
+    private boolean determineIfCircleOrRelated(Shape shape) {
+    
+    	if (compareVals(shape.getTopMostPixel().getX(), shape.getBottomMostPixel().getX()) 
 				&& compareVals(shape.getLeftMostPixel().getY(), shape.getRightMostPixel().getY())  
 				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getTopMostPixel().getY()] 
 				&& !shape.getShapeMatrix()[shape.getRightMostPixel().getX()][shape.getBottomMostPixel().getY()] 
@@ -1183,11 +1204,11 @@ public class Agent {
 				}
 
 				System.out.println("Shape is PLUS with rotation: " + shape.getRotation());
-				return shape;
+				return true;
 			} else  if (isPlusSign && !isMirroredPlus){
 				System.out.println("Shape is PACMAN with Zero rotation");
 				shape.setShape(Shapes.PACMAN);
-				return shape;
+				return true;
 			}
 			
 			if (rowValue != 0 && columnValue != 0) {
@@ -1232,21 +1253,21 @@ public class Agent {
 					System.out.println("Shape is PACMAN with 90 rotation");
 					shape.setShape(Shapes.PACMAN);
 					shape.setRotation(90);
-					return shape;
+					return true;
 				}
 				
 				if (foundTopRight && !foundBottomRight && foundBottomLeft) {
 					System.out.println("Shape is PACMAN with 180 rotation");
 					shape.setShape(Shapes.PACMAN);
 					shape.setRotation(180);
-					return shape;
+					return true;
 				}
 				
 				if (!foundTopRight && foundBottomRight && foundBottomLeft) {
 					System.out.println("Shape is PACMAN with 270 rotation");
 					shape.setShape(Shapes.PACMAN);
 					shape.setRotation(270);
-					return shape;
+					return true;
 				}
 			}
 			
@@ -1262,13 +1283,9 @@ public class Agent {
 			if (count < 5) {
 				System.out.println("Shape is DIAMOND");
 				shape.setShape(Shapes.DIAMOND);
-				return shape;
+				return true;
 			}
-			
-			System.out.println("WIDTH: " + shape.getWidth());
-			System.out.println("LEFTMOST: " + shape.getLeftMostPixel().getX());
-			System.out.println("CENTER: " + (shape.getLeftMostPixel().getX() + (shape.getWidth() / 2)));
-			
+						
 			// It might actually be a Octagon
 			// Check to see if both the top and bottom most pixels are left of center
 			if ( (shape.getTopMostPixel().getX() < shape.getLeftMostPixel().getX() + (shape.getWidth() / 2) - DELTA)
@@ -1276,16 +1293,20 @@ public class Agent {
 				
 				System.out.println("Shape is an OCTAGON");
 				shape.setShape(Shapes.OCTAGON);
-				return shape;
+				return true;
 			}
 			
 			// Else it is a Circle
 			System.out.println("Shape is CIRCLE");
 			shape.setShape(Shapes.CIRCLE);
-			return shape;
-		}
-		
-		int rotation = 0;
+			return true;
+			
+    	}
+		return false;
+    }
+    
+    private boolean determineIfTriangle(Shape shape) {
+    	int rotation = 0;
 		while (rotation < 360) {
 	
 			//System.out.println("ROTATING: " + rotation);
@@ -1299,7 +1320,7 @@ public class Agent {
 				System.out.println("Shape is Right triangle with rotation: " + rotation);
 				shape.setShape(Shapes.RIGHT_TRIANGLE);
 				shape.setRotation(rotation);
-				return shape;
+				return true;
 			}     
 			
 			// Equilatiral Triangle
@@ -1312,13 +1333,16 @@ public class Agent {
 				System.out.println("Shape is Equalatiral Triangle with rotation: " + rotation);
 				shape.setShape(Shapes.TRIANGLE);
 				shape.setRotation(rotation);
-				return shape;
+				return true;
 			}
 
 			rotation += 90;
 		}
-	
-		rotation = 0;
+		return false;
+    }
+    
+    private boolean determineIfHeart(Shape shape) {
+    	int rotation = 0;
 		while (rotation < 360) {
 	
 			//System.out.println("ROTATING: " + rotation);
@@ -1339,18 +1363,22 @@ public class Agent {
 				if (count < 5) {
 					System.out.println("Shape is HEART");
 					shape.setShape(Shapes.HEART);
-					return shape;
+					return true;
 				}
 			}
 	    
 			rotation += 90;
 		}
-		
-		// TODO: If it is an Unknown Shape, then add it to a list of unknown shapes
+		return false;
+    }
+    
+    private void handleUnknownShape(Shape shape) {
+    	
+    	// TODO: If it is an Unknown Shape, then add it to a list of unknown shapes
 		System.out.println("This is going to be an unknown shape");
 		for (Shape unknown : unknownShapes) {
 			
-			rotation = 0;
+			int rotation = 0;
 			while (rotation < 360) {
 		
 			//	System.out.println("ROTATING: " + rotation);
@@ -1369,7 +1397,7 @@ public class Agent {
 							System.out.println("Setting shape type to " + unknown.getShape() + " With Rotation: " + rotation);
 							shape.setShape(unknown.getShape());
 							shape.setRotation(rotation);
-							return shape;					
+							return;					
 				}
 		
 				rotation += 90;
@@ -1389,7 +1417,6 @@ public class Agent {
 		
 		unknownShapes.add(shape);
 		System.out.println("UNKNOWN SHAPE: " + shape.getShape() + " with rotation: " + shape.getRotation());
-    	return shape;
     }
     
     private void determineShapeFill(Shape shape) {    	
