@@ -91,10 +91,7 @@ public class Agent {
     
     public enum Transformations {
     	NONE,
-    	SIZE,
-    	REGION,
-    	REGION_X,
-    	REGION_Y,
+    	SIZE,    
     	ROTATION,
     	TEXTURE,
     	ADDSHAPE,
@@ -132,22 +129,7 @@ public class Agent {
     		this.sizeA = sizeA;
     		this.sizeB = sizeB;
     	}
-    	
-//		public Transformation(int index, boolean xRegion, List<Integer> bRegions) {
-//			
-//			if (xRegion) {
-//				this.transformation = Transformations.REGION_X;
-//				this.xRegions.clear();
-//				this.xRegions.addAll(bRegions);
-//			} else {
-//				this.transformation = Transformations.REGION_Y;
-//				this.yRegions.clear();
-//				this.yRegions.addAll(bRegions);
-//			}
-//			
-//			this.indexOfShape = index;
-//    	}
-//		
+	
     	public Transformation(int index, boolean xShift, int centerX, int centerY) {
     		if (xShift) {
     			this.transformation = Transformations.SHIFT_X;
@@ -158,17 +140,8 @@ public class Agent {
     		}
     		this.indexOfShape = index;
     	}
-    	
-		public Transformation(int index, List<Integer> regionA, List<Integer> regionB) {
-			this.transformation = Transformations.REGION;
-			this.indexOfShape = index;
-			this.regionsA.clear();
-			this.regionsB.clear();
-			this.regionsA.addAll(regionA);
-			this.regionsB.addAll(regionB);
-    	}
-		
-		public Transformation(int index, int rotation) {
+
+    	public Transformation(int index, int rotation) {
 			this.transformation = Transformations.ROTATION;
 			this.indexOfShape = index;
 			this.rotation = rotation;
@@ -295,11 +268,6 @@ public class Agent {
     	boolean isCentered;
     	int height = 0;
     	int width = 0;
-    	//int region = 0;
-    	List<Integer> xRegions = new ArrayList<Integer>();
-    	List<Integer> yRegions = new ArrayList<Integer>();
-    	//boolean[] regions = new boolean[25];
-    	List<Integer> regions = new ArrayList<Integer>();
 
         Shapes shape = Shapes.NONE;    	
     	Textures texture = Textures.HOLLOW;
@@ -315,13 +283,7 @@ public class Agent {
     	Pixel leftMostPixel = new Pixel(183, 0);
     	Pixel rightMostPixel = new Pixel(0, 0);
     	Pixel center = new Pixel(0,0);
-    		
-    	
-    	
-    	public List<Integer> getRegions() {
-			return regions;
-		}
-
+    
 		public Shapes getShape() {
 			return shape;
 		}
@@ -396,14 +358,7 @@ public class Agent {
 				
 				this.isCentered = true;
 			}
-		}
-		public List<Integer> getXRegions() {
-			return xRegions;
-		}
-		public List<Integer> getYRegions() {
-			return yRegions;
-		}
-		
+		}		
 		public Textures getTexture() {
 			return texture;
 		}
@@ -449,6 +404,11 @@ public class Agent {
 				return true;
 			}
 			return false;
+		}
+		
+		public String toString() {
+			return "Texture: " + texture.toString() + ", HalfFill: " + fills + ", Rotation: " + rotation + ", Center: (" + 
+					center.getX() + ", " + center.getY() + "), Height: " + height + ", Width: " + width;
 		}
     }
     
@@ -576,8 +536,6 @@ public class Agent {
     		diagram.setShapeList(shapeList);
     	}	
     }
-    
-  
     
     private String determineFinalAnswer(HashMap<String, Diagram> diagramList) {
     	
@@ -878,12 +836,7 @@ public class Agent {
 	    			
 	    			shape.setRotation(t.getRotation());
 	    		}
-	
-	    		if (t.getTransformation() == Transformations.REGION) {
-	    			shape.getRegions().clear();
-	    			shape.getRegions().addAll(t.getRegionsB());
-	    		}
-	    		
+
 	    		if (t.getTransformation() == Transformations.SHIFT_X) {
 	    			shape.setCenter(new Pixel(t.getCenterX(), shape.getCenter().getY()));
 	    		}
@@ -910,16 +863,7 @@ public class Agent {
     	solution.getShapeList().addAll(finalList);
     	
     	System.out.println("Done generating the diagram D ****");
-    	for (Shape shape : solution.getShapeList()) {
-    		System.out.println("Shape: " + shape.getShape() + ",  Rotation: " + ", Center: (" + shape.getCenter().getX() + ", " + shape.getCenter().getY() + "), TEXTURE: " + shape.getTexture() + ", " + shape.getRotation() + ", is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", HalfFills: " + shape.getFills() + ", Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
-    		System.out.print("X-REGIONS: ");
-    		for (Integer i : shape.getXRegions()) System.out.print(i + ", ");
-    		System.out.println();
-    		System.out.print("Y-REGIONS: ");
-    		for (Integer i : shape.getYRegions()) System.out.print(i + ", ");
-    		System.out.println();    		
-    	}
-
+    	for (Shape shape : solution.getShapeList()) System.out.println(shape.toString());
     	return solution;
     }
 
@@ -1070,8 +1014,7 @@ public class Agent {
 			if (containsDeletes && containsMirroring) {
 				
 				// This means there is only 1 shape in both diagrams. The shapes are different types, but are mirrors of each other.
-				// In this case we disregard deleting and adding shapes and only use mirroring, etc.
-				
+				// In this case we disregard deleting and adding shapes and only use mirroring, etc.		
 				transformations.clear();
 			} 
 			
@@ -1131,7 +1074,7 @@ public class Agent {
     		// If they are both centered then don't bother with region 
     		if (!s1.isCentered() || !s2.isCentered()) {
     		
-    			
+    			// Build Shift type transformations
     			if (Math.abs(s1.getCenter().getX() - s2.getCenter().getX()) > 10) {    				
     				transformations.add(new Transformation(indexOfShape, true, s2.getCenter().getX(), -1));
     			}
@@ -1139,31 +1082,12 @@ public class Agent {
     			if (Math.abs(s1.getCenter().getY() - s2.getCenter().getY()) > 10) {
     				transformations.add(new Transformation(indexOfShape, false, -1, s2.getCenter().getY()));
     			}
-    			
-    			boolean sameRegions = false;
-    			
-    			if (s1.getRegions().size() == s2.getRegions().size()) {
-    				
-    				sameRegions = true;
-    				
-    				for (int i = 0; i < s1.getRegions().size(); i++) {
-    					
-    					if (s1.getRegions().get(i) != s2.getRegions().get(i)) {
-    						sameRegions = false;
-    						break;
-    					}
-    				}
-    				
-    				
-    			}
-    			
     		}
     		
     		if (s1.getFills() != s2.getFills()) {
     			transformations.add(new Transformation(indexOfShape, s1.getFills(), s2.getFills()));
     		}			
-    	}
-    	
+    	}    	
     	
 		if (s1.getTexture() != s2.getTexture()) {
 			transformations.add(new Transformation(indexOfShape, s1.getTexture(), s2.getTexture()));
@@ -1205,18 +1129,13 @@ public class Agent {
 			} 
 		}
     	
-//		System.out.println("TopMost: (" + newShape.getTopMostPixel().getX() + ", " + newShape.getTopMostPixel().getY() + ")");
-//		System.out.println("BottomMost: (" + newShape.getBottomMostPixel().getX() + ", " + newShape.getBottomMostPixel().getY() + ")");
-//		System.out.println("LeftMost: (" + newShape.getLeftMostPixel().getX() + ", " + newShape.getLeftMostPixel().getY() + ")");
-//		System.out.println("RightMost: (" + newShape.getRightMostPixel().getX() + ", " + newShape.getRightMostPixel().getY() + ")");
-		
-    	return newShape;
+		// printEdgePixels(newShape);
+		return newShape;
     }
     
     private boolean[][] rotateMatrix90Degrees(boolean[][] matrix) {
     	
-    	// printMatrix(matrix)
-    	
+    	// printMatrix(matrix)    	
     	boolean[][] rotatedMatrix = new boolean[184][184];
     	
 		// rotate 90 degrees
@@ -1249,23 +1168,17 @@ public class Agent {
 			}
 		}
 		
-		System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
-		System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
-		System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
-		System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
+		printEdgePixels(shape);
     	
 		shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
-    	shape.getRegions().addAll(findRegion(shape));
     	
     	discoverShapeType(shape);
     	determineShapeFill(shape);
     	discoverHalfFill(shape);
     	
-    	System.out.println("Shape is solid: " + shape.isSolid() + ", isHollow: " + shape.isHollow() + ", Texture: " 
-    			+ shape.getTexture().toString() + ", HalfFill: " + shape.getFills() 
-    			+ ", Rotation: " + shape.getRotation() + ", Center: (" + shape.getCenter().getX() + ", " + shape.getCenter().getY() + "), Height: " + shape.getHeight() + ", Width: " + shape.getWidth());
+    	System.out.println(shape.toString());
     	return shape;
     }
     
@@ -1353,66 +1266,7 @@ public class Agent {
     		
     	}
     }
-    
-    private List<Integer> findRegion(Shape shape) {
-    	
-    	boolean[] regionsIn = new boolean[25];
-    	
-    	for (int i = 0; i < 25; i++) regionsIn[i] = false;
-    		for (int i = 0; i < 184; i++) {
-    	    	for (int j = 0; j < 184; j++) {
-    		
-    			if (shape.getShapeMatrix()[j][i]) {
-    				if (i < 37) {    					
-    					if (j < 37) regionsIn[0] = true;    						
-    					else if (j < 74) regionsIn[1] = true;    						
-    					else if (j < 111) regionsIn[2] = true;    						
-    					else if (j < 148) regionsIn[3] = true;
-    					else regionsIn[4] = true;    					
-    				} else if (i < 74) {
-    					if (j < 37) regionsIn[5] = true;    						
-    					else if (j < 74) regionsIn[6] = true;    						
-    					else if (j < 111) regionsIn[7] = true;    						
-    					else if (j < 148) regionsIn[8] = true;
-    					else regionsIn[9] = true;
-    				} else if (i < 111) {
-    					if (j < 37) regionsIn[10] = true;    						
-    					else if (j < 74) regionsIn[11] = true;    						
-    					else if (j < 111) regionsIn[12] = true;    						
-    					else if (j < 148) regionsIn[13] = true;
-    					else regionsIn[14] = true;
-    				} else if (i < 148) {
-    					if (j < 37) regionsIn[15] = true;    						
-    					else if (j < 74) regionsIn[16] = true;    						
-    					else if (j < 111) regionsIn[17] = true;    						
-    					else if (j < 148) regionsIn[18] = true;
-    					else regionsIn[19] = true;
-    				} else {
-     					if (j < 37) regionsIn[20] = true;    						
-     					else if (j < 74) regionsIn[21] = true;    						
-     					else if (j < 111) regionsIn[22] = true;    						
-     					else if (j < 148) regionsIn[23] = true;
-     					else regionsIn[24] = true;
-     				}    	
-    			}
-    		}
-    	}
-    		
-    	System.out.print("REGIONS IN: " );
-    	
-    	List<Integer> regions = new ArrayList<Integer>();
-    	
-    	for (int k = 0; k < 25; k++) {
-    		if (regionsIn[k]) {
-    			System.out.print(k + ", ");
-    			regions.add(k);
-    		}
-    	}
-    	System.out.println();
-    	
-    	return regions;
-    }
-    
+   
     // Take in an ambiguous shape and determine if it is a known shape
     private Shape discoverShapeType(Shape shape) {
     	
@@ -1436,7 +1290,6 @@ public class Agent {
 				&& !shape.getShapeMatrix()[shape.getLeftMostPixel().getX()][shape.getBottomMostPixel().getY()]) {
 		
 			boolean isPlusSign = true;
-			boolean isPacMan = true;
 			int rowValue = 0;
 			int columnValue = 0;
 			
@@ -1821,6 +1674,13 @@ public class Agent {
        			}
        		}
        	}
+    }
+    
+    private void printEdgePixels(Shape shape) {
+    	System.out.println("TopMost: (" + shape.getTopMostPixel().getX() + ", " + shape.getTopMostPixel().getY() + ")");
+		System.out.println("BottomMost: (" + shape.getBottomMostPixel().getX() + ", " + shape.getBottomMostPixel().getY() + ")");
+		System.out.println("LeftMost: (" + shape.getLeftMostPixel().getX() + ", " + shape.getLeftMostPixel().getY() + ")");
+		System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
     }
     
     private void printTransformations(List<Transformation> transformations, HashMap<String, Diagram> diagramList) {
