@@ -85,7 +85,8 @@ public class Agent {
     public enum Sizes {
     	SMALL,
     	MEDIUM,
-    	LARGE
+    	LARGE,
+    	EXTRA_LARGE
     }
     
     public enum Transformations {
@@ -397,7 +398,7 @@ public class Agent {
 			return false;
 		}		
 		public String toString() {
-			return "Texture: " + texture.toString() + ", HalfFill: " + fills + ", Rotation: " + rotation + ", Center: (" + 
+			return "Texture: " + texture.toString() + ", HalfFill: " + fills + ", Size: " + size + ", Rotation: " + rotation + ", Center: (" + 
 					center.getX() + ", " + center.getY() + "), Height: " + height + ", Width: " + width;
 		}
     }
@@ -435,8 +436,7 @@ public class Agent {
 			this.shapeList = shapeList;
 		}		
     }
-    
-        
+           
     private List<Shape> unknownShapes = new ArrayList<Shape>();
     
     /**
@@ -474,7 +474,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem C-06"))) return -1;
+    	if (!( problem.getName().equals("Basic Problem C-02"))) return -1;
     	//if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
 
     	boolean isThreeByThree = false;
@@ -488,8 +488,13 @@ public class Agent {
     	    
     	buildShapesInDiagrams(diagramList, isThreeByThree);
     
-     	String chosenAnswer = determineFinalAnswer(diagramList);
-    	
+    	String chosenAnswer = "";
+    	if (!isThreeByThree) {
+    		chosenAnswer = determineFinalAnswerFor2x2(diagramList);
+    	} else {
+    		chosenAnswer = determineFinalAnswerFor3x3(diagramList);
+    	}
+     	
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	return Integer.parseInt(chosenAnswer);    	
     }
@@ -520,17 +525,15 @@ public class Agent {
     }
     
     // TODO: This area is messy
-    private String determineFinalAnswer(HashMap<String, Diagram> diagramList) {
+    private String determineFinalAnswerFor2x2(HashMap<String, Diagram> diagramList) {
     	
     	// Compare D to all of the available solutions
     	
     	// Build Transformations between A->B and A->C
-    	System.out.println();
     	List<Transformation> bTransformations = buildTransformations(diagramList.get("A"), diagramList.get("B"));
-    	printTransformations(bTransformations, diagramList);
-    	System.out.println();
+    	printTransformations(bTransformations, diagramList.get("A"));
     	List<Transformation> cTransformations = buildTransformations(diagramList.get("A"), diagramList.get("C"));
-    	printTransformations(cTransformations, diagramList);
+    	printTransformations(cTransformations, diagramList.get("A"));
     	
     	List<Transformation> bcTransformations = new ArrayList<Transformation>();
     	bcTransformations.addAll(bTransformations);
@@ -642,6 +645,50 @@ public class Agent {
     	}
     	
     	return chosenAnswer;    	
+    }
+    
+    private String determineFinalAnswerFor3x3(HashMap<String, Diagram> diagramList) {
+    	
+    	System.out.println("Determining answer for 3x3 Problem");
+    	
+    	// Build Transformations between A->B and A->C
+    	List<Transformation> abTransformations = buildTransformations(diagramList.get("A"), diagramList.get("B"));
+    	printTransformations(abTransformations, diagramList.get("A"));
+    	List<Transformation> bcTransformations = buildTransformations(diagramList.get("B"), diagramList.get("C"));
+    	printTransformations(bcTransformations, diagramList.get("B"));
+    	    	
+    	// Generate solutions by applying transformations from A->B onto C, and from A->C onto B
+    	Diagram GH = generateSolutionDiagram(diagramList.get("G"), abTransformations);
+    	Diagram I = generateSolutionDiagram(GH, bcTransformations);
+    	
+    	System.out.println("\nComparing D to all of the available answers");
+    
+    	String chosenAnswer = "";
+    	int lowestCount = Integer.MAX_VALUE;
+    	int transformationCount = 0;
+    		
+		for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    		
+    		System.out.println("Comparing I to " + figure);	    		
+    		
+        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+        	transformations2.addAll(buildTransformations(I, diagramList.get(figure)));
+        	
+        	transformationCount = transformations2.size();
+    		System.out.println("TransformationCount: " + transformationCount);
+    		System.out.println("*** These are all of the transformations from D -> " + figure);
+        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+        	
+    		if (transformationCount <= lowestCount) {
+    			lowestCount = transformationCount;
+    			chosenAnswer = figure;
+    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+    		}    		
+    	}
+    	
+    	System.out.println("First Chosen Answer: " + chosenAnswer);
+ 	
+    	return chosenAnswer;
     }
     
     // For a diagram, create a new matrix for each shape that has only that single shape on the matrix
@@ -881,12 +928,41 @@ public class Agent {
     			// If the shape types match then map them
     			if (baseShape.getShape() == compareShape.getShape()) {
     				
+    				// TODO: They don't have to be the same size, but should match up right
     				// Are they about the same size?
-    				if ( (Math.abs(baseShape.getWidth() - compareShape.getWidth()) < 5) 
-    						&& (Math.abs(baseShape.getHeight() - compareShape.getHeight()) < 5)) {	    					
+    				//if ( (Math.abs(baseShape.getWidth() - compareShape.getWidth()) < 5) 
+    				//		&& (Math.abs(baseShape.getHeight() - compareShape.getHeight()) < 5)) {	   
+    				// }
+    				
+    				// TODO: Do at better job determine best match
+    				if (partnerShape != null) {
+    					
+    					// We have already matched this shape up, is this shape a better match?
+    					
+    					// If the texture is a better match then choose this one
+    					if (baseShape.getTexture() == compareShape.getTexture() && baseShape.getTexture() != partnerShape.getTexture()) {
+    						partnerShape = compareShape;
+        					indexOfBestMatch = j;
+    					}
+    					
+    					// If it is closer in size then choose this one
+    					int currentWidthDiff = Math.abs(baseShape.getWidth() - partnerShape.getWidth());
+    					int currentHeightDiff = Math.abs(baseShape.getHeight() - partnerShape.getHeight());
+    					int newWidthDiff = Math.abs(baseShape.getWidth() - compareShape.getWidth());
+    					int newHeightDiff = Math.abs(baseShape.getHeight() - compareShape.getHeight());
+    					
+    					if (newWidthDiff < currentWidthDiff && newHeightDiff < currentHeightDiff) {
+    						partnerShape = compareShape;
+        					indexOfBestMatch = j;
+    					}
+    					
+    				} else {
     					partnerShape = compareShape;
     					indexOfBestMatch = j;
     				}
+    				
+    					
+    				
      			}
     		}
     		
@@ -898,6 +974,14 @@ public class Agent {
     			mapping.put(i, -1);
     		}
 		}
+		
+		// Create transformations for every shape in d1
+    	for (Map.Entry<Integer, Integer> entry : mapping.entrySet()) {
+    	    Integer key = entry.getKey();
+    	    Integer value = entry.getValue();
+    	    System.out.println("Key: " + key + ", Value: " + value);
+    	 
+    	}
 		
     	// Create transformations for every shape in d1
     	for (Map.Entry<Integer, Integer> entry : mapping.entrySet()) {
@@ -1083,6 +1167,7 @@ public class Agent {
     	discoverShapeType(shape);
     	determineShapeFill(shape);
     	discoverHalfFill(shape);    	
+    	determineShapeSize(shape);
     	System.out.println(shape.toString());
     	return shape;
     }
@@ -1104,6 +1189,18 @@ public class Agent {
 		shape.setHeight(shape.getBottomMostPixel().getY() - shape.getTopMostPixel().getY());
     	shape.setWidth(shape.getRightMostPixel().getX() - shape.getLeftMostPixel().getX());
     	shape.setCenter(new Pixel(shape.getLeftMostPixel().getX() + shape.getWidth()/2, shape.getTopMostPixel().getY() + shape.getHeight()/2));
+	}
+	
+	private void determineShapeSize(Shape shape) {		
+		if (shape.getWidth() < 50 && shape.getHeight() < 50) {
+			shape.setSize(Sizes.SMALL);
+		} else if (shape.getWidth() < 100 && shape.getHeight() < 100) {
+			shape.setSize(Sizes.MEDIUM);
+		} else if (shape.getWidth() < 150 && shape.getHeight() < 150) {
+			shape.setSize(Sizes.LARGE);
+		} else {
+			shape.setSize(Sizes.EXTRA_LARGE);
+		}		
 	}
 	
     // Take in an ambiguous shape and determine if it is a known shape
@@ -1433,7 +1530,7 @@ public class Agent {
     	int expectedPixelCount = 0;
     	int areaDelta = 25;
     	    	
-    	if (shape.getShape() == Shapes.SQUARE) {    		
+    	if (shape.getShape() == Shapes.SQUARE || shape.getShape() == Shapes.RECTANGLE) {    		
     		expectedPixelCount = shape.getWidth() * shape.getHeight();
     	} else if (shape.getShape() == Shapes.CIRCLE) {    		
     		expectedPixelCount = (int) (Math.PI * (Math.pow((shape.getWidth() / 2), 2)));
@@ -1656,16 +1753,17 @@ public class Agent {
 		System.out.println("RightMost: (" + shape.getRightMostPixel().getX() + ", " + shape.getRightMostPixel().getY() + ")");
     }
     
-    private void printTransformations(List<Transformation> transformations, HashMap<String, Diagram> diagramList) {
-    	System.out.println("These are all of the transformations from A -> B and A-> C");
+    private void printTransformations(List<Transformation> transformations, Diagram diagram) {
+    	System.out.println("\nThese are all of the transformations from A -> B and A-> C");
     	for (Transformation t : transformations) {
     		
     		String shapeName = Shapes.NONE.toString();
     		if (t.getIndexOfShape() != -1) {
-    			shapeName = diagramList.get("A").getShapeList().get(t.getIndexOfShape()).getShape().toString();
+    			shapeName = diagram.getShapeList().get(t.getIndexOfShape()).getShape().toString();
     		}
     		System.out.println(shapeName + ", " + t.getTransformation() + ", Index: " + t.getIndexOfShape());
     	}
+    	System.out.println();
     }
     
     private static boolean compareVals(int a, int b) {
