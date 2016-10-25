@@ -501,8 +501,7 @@ public class Agent {
     	} else {
     		chosenAnswer = determineFinalAnswerFor3x3(diagramList);
     	}
-    
-     	
+         	
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	return Integer.parseInt(chosenAnswer);    	
     }
@@ -749,14 +748,12 @@ public class Agent {
 	    	printTransformations(agTransformations, diagramList.get("A"));
 	    	    	
 	    	List<Transformation> cgTransformations = new ArrayList<Transformation>();
-	    	bcTransformations.addAll(acTransformations);
-	    	bcTransformations.addAll(agTransformations);
+	    	cgTransformations.addAll(acTransformations);
+	    	cgTransformations.addAll(agTransformations);
 	    	
-	    	I = generateSolutionDiagram(diagramList.get("G"), acTransformations);
+	    	I = generateSolutionDiagram(diagramList.get("A"), cgTransformations);
 	    		    	
 	    	System.out.println("\nComparing I to all of the available answers");
-	    
-	    	chosenAnswer = "";
 	    		
 			for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
 	    		
@@ -898,7 +895,7 @@ public class Agent {
     	for (int i = 0; i < shapeList.size(); i++) {
     		
     		Shape shape = shapeList.get(i);
-    		System.out.println("This shape is a " + shape.getShape());
+    		System.out.println("This shape is a " + shape.getShape() + ", " + shape.toString());
     		
     		for (Transformation t : transformations) {
 	    
@@ -952,7 +949,8 @@ public class Agent {
 		    			System.out.println("Fill has been updated to: " + shape.getFills());
 	    			}
 	    			
-	    			shape.setRotation(t.getRotation());
+	    			System.out.println("This is a rotation transformation with rotation: " + t.getRotation());
+	    			shape.setRotation(shape.getRotation() + t.getRotation() % 360);
 	    		}
 
 	    		if (t.getTransformation() == Transformations.SHIFT_X) {
@@ -1155,23 +1153,24 @@ public class Agent {
     	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE && s1.getShape() != Shapes.PLUS 
     			&& s1.getShape() != Shapes.OCTAGON && s1.getShape() != Shapes.DIAMOND && s1.getShape() != Shapes.HEART) {
     		
-    		Shape mirroredXWise = mirrorOverXAxis(s2);
-        	Shape mirroredYWise = mirrorOverYAxis(s2);
-        	
-        	buildShape(mirroredXWise.getShapeMatrix(), mirroredXWise);
-        	buildShape(mirroredYWise.getShapeMatrix(), mirroredYWise);
-        	
-        	if (s1.getShape() == mirroredXWise.getShape() && s1.getRotation() == mirroredXWise.getRotation()) {
-            	// x-wise mirror
-        		isMirroring = true;
-            	transformations.add(new Transformation(indexOfShape, true));
-        	}
-        	
-        	if (s1.getShape() == mirroredYWise.getShape() && s1.getRotation() == mirroredYWise.getRotation()) {
-            	// y-wise mirror
-        		isMirroring = true;
-            	transformations.add(new Transformation(indexOfShape, false));        	
-        	}		
+    		// TODO: Disabled mirroring
+//    		Shape mirroredXWise = mirrorOverXAxis(s2);
+//        	Shape mirroredYWise = mirrorOverYAxis(s2);
+//        	
+//        	buildShape(mirroredXWise.getShapeMatrix(), mirroredXWise);
+//        	buildShape(mirroredYWise.getShapeMatrix(), mirroredYWise);
+//        	
+//        	if (s1.getShape() == mirroredXWise.getShape() && s1.getRotation() == mirroredXWise.getRotation()) {
+//            	// x-wise mirror
+//        		isMirroring = true;
+//            	transformations.add(new Transformation(indexOfShape, true));
+//        	}
+//        	
+//        	if (s1.getShape() == mirroredYWise.getShape() && s1.getRotation() == mirroredYWise.getRotation()) {
+//            	// y-wise mirror
+//        		isMirroring = true;
+//            	transformations.add(new Transformation(indexOfShape, false));        	
+//        	}		
     	}
     	
     	// Only bother checking if we don't have a Mirroring
@@ -1344,9 +1343,10 @@ public class Agent {
 			// TODO: Pacmans are considered unknown if they have a 45 degree rotation
 			
 			// Is there any pixel above the leftMost and to the left of TopMost?
-			for (int row = 0; row < shape.getLeftMostPixel().getY() - 5; row++) {
-				for (int column = 0; column < shape.getTopMostPixel().getX() - 5; column++) {
-					if (shape.getShapeMatrix()[row][column]) {
+			for (int row = shape.getTopMostPixel().getY(); row < shape.getLeftMostPixel().getY() - 5; row++) {
+				for (int column = shape.getLeftMostPixel().getX(); column < shape.getTopMostPixel().getX() - 5; column++) {
+					
+					if (shape.getShapeMatrix()[column][row]) {
 						isPlusSign = false;
 						rowValue = row;
 						columnValue = column;
