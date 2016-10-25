@@ -398,7 +398,7 @@ public class Agent {
 			return false;
 		}		
 		public String toString() {
-			return "Texture: " + texture.toString() + ", HalfFill: " + fills + ", Size: " + size + ", Rotation: " + rotation + ", Center: (" + 
+			return "Shape: " + shape + ", Texture: " + texture.toString() + ", HalfFill: " + fills + ", Size: " + size + ", Rotation: " + rotation + ", Center: (" + 
 					center.getX() + ", " + center.getY() + "), Height: " + height + ", Width: " + width;
 		}
     }
@@ -408,7 +408,8 @@ public class Agent {
     	String name = "";
     	boolean[][] matrix = new boolean[184][184];
     	List<Shape> shapeList = new ArrayList<Shape>();
-    
+    	int pixelCount = 0;
+    	
     	public boolean isIdenticalMatch(Diagram d2) {
     		for (int i = 0; i < 184; i++) {
     			for (int j = 0; j < 184; j++) {
@@ -434,7 +435,13 @@ public class Agent {
 		}
 		public void setShapeList(List<Shape> shapeList) {
 			this.shapeList = shapeList;
-		}		
+		}
+		public int getPixelCount() {
+			return pixelCount;
+		}
+		public void setPixelCount(int pixelCount) {
+			this.pixelCount = pixelCount;
+		}
     }
            
     private List<Shape> unknownShapes = new ArrayList<Shape>();
@@ -474,7 +481,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	if (!( problem.getName().equals("Basic Problem C-02"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem C-09"))) return -1;
     	//if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
 
     	boolean isThreeByThree = false;
@@ -494,6 +501,7 @@ public class Agent {
     	} else {
     		chosenAnswer = determineFinalAnswerFor3x3(diagramList);
     	}
+    
      	
     	System.out.println("Finishing " + problem.getName() + " and returning: " + chosenAnswer);
     	return Integer.parseInt(chosenAnswer);    	
@@ -508,6 +516,7 @@ public class Agent {
     		Diagram diagram = diagramList.get(name);
     		
     		if (diagram == null) continue;
+    		diagram.setPixelCount(countPixels(diagram));
     		
     		List<Shape> shapeList = new ArrayList<Shape>();
     		
@@ -647,11 +656,52 @@ public class Agent {
     	return chosenAnswer;    	
     }
     
+    private String countingStrategy(HashMap<String, Diagram> diagramList) {
+    	
+    	System.out.println("Attempting to find solution with counting strategy");
+		
+    	String answer = null;
+    	
+    	if (diagramList.get("B").getPixelCount() > diagramList.get("A").getPixelCount() 
+    			&& diagramList.get("C").getPixelCount() > diagramList.get("B").getPixelCount() 
+    			&& diagramList.get("D").getPixelCount() > diagramList.get("A").getPixelCount()
+    			&& diagramList.get("G").getPixelCount() > diagramList.get("D").getPixelCount()) {
+    		System.out.println("Valid scenario");
+    	} else {
+    		System.out.println("Not attempting");
+    		return answer;
+    	}
+    	
+    	int difference = diagramList.get("H").getPixelCount() - diagramList.get("G").getPixelCount();
+    	int expectedCount = diagramList.get("H").getPixelCount() + difference;
+    	
+    	System.out.println("Difference: " + difference + ", expectedCount: " + expectedCount);
+    	
+    	int diff = Integer.MAX_VALUE;
+    	
+    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    		
+    		if (Math.abs(expectedCount - diagramList.get(figure).getPixelCount()) < diff) {
+    			diff = Math.abs(expectedCount - diagramList.get(figure).getPixelCount());
+    			answer = figure;
+    		}
+    	}
+    	
+    	System.out.println("The final diff is: " + diff + " with figure: " + answer);
+    	
+    	return answer;
+    }
+    
     private String determineFinalAnswerFor3x3(HashMap<String, Diagram> diagramList) {
     	
     	System.out.println("Determining answer for 3x3 Problem");
     	
+    	// Attempt the counting strategy, if it is valid then use that as the answer
+    	String countingSolution = countingStrategy(diagramList);
+    	if (countingSolution != null) return countingSolution;
+    	
     	// Build Transformations between A->B and A->C
+    	System.out.println();
     	List<Transformation> abTransformations = buildTransformations(diagramList.get("A"), diagramList.get("B"));
     	printTransformations(abTransformations, diagramList.get("A"));
     	List<Transformation> bcTransformations = buildTransformations(diagramList.get("B"), diagramList.get("C"));
@@ -685,6 +735,51 @@ public class Agent {
     			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
     		}    		
     	}
+		
+		if (lowestCount > 0) {
+			
+			System.out.println("\n\n\n\nAttempting the corner strategy");
+			System.out.println("Currently, the chosen answer is " + chosenAnswer + ", with transformation count: " + transformationCount);
+			
+			// Build Transformations between A->C and A->G
+	    	System.out.println();
+	    	List<Transformation> acTransformations = buildTransformations(diagramList.get("A"), diagramList.get("C"));
+	    	printTransformations(acTransformations, diagramList.get("A"));
+	    	List<Transformation> agTransformations = buildTransformations(diagramList.get("A"), diagramList.get("G"));
+	    	printTransformations(agTransformations, diagramList.get("A"));
+	    	    	
+	    	List<Transformation> cgTransformations = new ArrayList<Transformation>();
+	    	bcTransformations.addAll(acTransformations);
+	    	bcTransformations.addAll(agTransformations);
+	    	
+	    	I = generateSolutionDiagram(diagramList.get("G"), acTransformations);
+	    		    	
+	    	System.out.println("\nComparing I to all of the available answers");
+	    
+	    	chosenAnswer = "";
+	    		
+			for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+	    		
+	    		System.out.println("Comparing I to " + figure);	    		
+	    		
+	        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+	        	transformations2.addAll(buildTransformations(I, diagramList.get(figure)));
+	        	
+	        	transformationCount = transformations2.size();
+	    		System.out.println("TransformationCount: " + transformationCount);
+	    		System.out.println("*** These are all of the transformations from D -> " + figure);
+	        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+	        	
+	    		if (transformationCount <= lowestCount) {
+	    			lowestCount = transformationCount;
+	    			chosenAnswer = figure;
+	    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+	    		}    		
+	    	}
+			
+			
+			
+		}
     	
     	System.out.println("First Chosen Answer: " + chosenAnswer);
  	
@@ -960,9 +1055,6 @@ public class Agent {
     					partnerShape = compareShape;
     					indexOfBestMatch = j;
     				}
-    				
-    					
-    				
      			}
     		}
     		
@@ -1061,7 +1153,7 @@ public class Agent {
     	
     	// Check if shapes are mirrors of each other, don't bother with squares/circles
     	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE && s1.getShape() != Shapes.PLUS 
-    			&& s1.getShape() != Shapes.OCTAGON && s1.getShape() != Shapes.DIAMOND) {
+    			&& s1.getShape() != Shapes.OCTAGON && s1.getShape() != Shapes.DIAMOND && s1.getShape() != Shapes.HEART) {
     		
     		Shape mirroredXWise = mirrorOverXAxis(s2);
         	Shape mirroredYWise = mirrorOverYAxis(s2);
@@ -1209,7 +1301,7 @@ public class Agent {
     	if (determineIfRectangular(shape)) {}
 		else if (determineIfCircleOrRelated(shape)) {}
     	else if (determineIfTriangle(shape)) {}
-		else if (determineIfHeart(shape)) {}
+	//	else if (determineIfHeart(shape)) {}
 		else {
     		handleUnknownShape(shape);
     	}
@@ -1470,46 +1562,44 @@ public class Agent {
     }
     
     private void handleUnknownShape(Shape shape) {
-    	
-    	// TODO: If it is an Unknown Shape, then add it to a list of unknown shapes
+    	    	
 		System.out.println("This is going to be an unknown shape");
 		for (Shape unknown : unknownShapes) {
 			
 			int rotation = 0;
 			while (rotation < 360) {
 		
-			//	System.out.println("ROTATING: " + rotation);
 				Shape rotatedShape = rotateShape(shape, rotation);
 				
 				// If this shape matches one the unknown shapes then use that
-				if (compareVals(rotatedShape.getBottomMostPixel().getX(), unknown.getBottomMostPixel().getX()) 
-						&& compareVals(rotatedShape.getBottomMostPixel().getY(), unknown.getBottomMostPixel().getY())
-						&& compareVals(rotatedShape.getTopMostPixel().getX(), unknown.getTopMostPixel().getX())
-						&& compareVals(rotatedShape.getTopMostPixel().getY(), unknown.getTopMostPixel().getY())
-						&& compareVals(rotatedShape.getLeftMostPixel().getX(), unknown.getLeftMostPixel().getX())
-						&& compareVals(rotatedShape.getLeftMostPixel().getY(), unknown.getLeftMostPixel().getY())
-						&& compareVals(rotatedShape.getRightMostPixel().getX(), unknown.getRightMostPixel().getX())
-						&& compareVals(rotatedShape.getRightMostPixel().getY(), unknown.getRightMostPixel().getY()) ) {
+				if (compareVals(Math.abs(rotatedShape.getBottomMostPixel().getX() - rotatedShape.getTopMostPixel().getX()), Math.abs(unknown.getBottomMostPixel().getX() - unknown.getTopMostPixel().getX()))
+						&& compareVals(Math.abs(rotatedShape.getBottomMostPixel().getX() - rotatedShape.getLeftMostPixel().getX()), Math.abs(unknown.getBottomMostPixel().getX() - unknown.getLeftMostPixel().getX()))
+						&& compareVals(Math.abs(rotatedShape.getBottomMostPixel().getX() - rotatedShape.getRightMostPixel().getX()), Math.abs(unknown.getBottomMostPixel().getX() - unknown.getRightMostPixel().getX()))
+						&& compareVals(Math.abs(rotatedShape.getTopMostPixel().getX() - rotatedShape.getLeftMostPixel().getX()), Math.abs(unknown.getTopMostPixel().getX() - unknown.getLeftMostPixel().getX()))
+						&& compareVals(Math.abs(rotatedShape.getTopMostPixel().getX() - rotatedShape.getRightMostPixel().getX()), Math.abs(unknown.getTopMostPixel().getX() - unknown.getRightMostPixel().getX()))
+						&& compareVals(Math.abs(rotatedShape.getLeftMostPixel().getX() - rotatedShape.getRightMostPixel().getX()), Math.abs(unknown.getLeftMostPixel().getX() - unknown.getRightMostPixel().getX()))
+						) {
 							
 							System.out.println("Setting shape type to " + unknown.getShape() + " With Rotation: " + rotation);
 							shape.setShape(unknown.getShape());
 							shape.setRotation(rotation);
 							return;					
 				}
-		
+				
+				
 				rotation += 90;
 			}
+			
 		}
 		
-		// TODO: Must be a better way to do this
 		if (unknownShapes.size() == 0) shape.setShape(Shapes.UNKNOWN_1);
 		else if (unknownShapes.size() == 1) shape.setShape(Shapes.UNKNOWN_2);
 		else if (unknownShapes.size() == 2) shape.setShape(Shapes.UNKNOWN_3);
 		else if (unknownShapes.size() == 3) shape.setShape(Shapes.UNKNOWN_4);
 		else if (unknownShapes.size() == 4) shape.setShape(Shapes.UNKNOWN_5);
-		else if (unknownShapes.size() == 4) shape.setShape(Shapes.UNKNOWN_6);
-		else if (unknownShapes.size() == 4) shape.setShape(Shapes.UNKNOWN_7);
-		else if (unknownShapes.size() == 4) shape.setShape(Shapes.UNKNOWN_8);
+		else if (unknownShapes.size() == 5) shape.setShape(Shapes.UNKNOWN_6);
+		else if (unknownShapes.size() == 6) shape.setShape(Shapes.UNKNOWN_7);
+		else if (unknownShapes.size() == 7) shape.setShape(Shapes.UNKNOWN_8);
 		else shape.setShape(Shapes.UNKNOWN_9);
 		
 		unknownShapes.add(shape);
@@ -1622,7 +1712,20 @@ public class Agent {
     	return count;
     }
     
-    // TODO: This is a hacky fix designed to help solve problem B-08 with half filled objects
+    private int countPixels(Diagram diagram) {
+    
+    	int count = 0;
+	    for (int j = 0; j < 184; j++) {
+			for (int i = 0; i < 184; i++) {
+				if (diagram.getMatrix()[i][j]) {
+					count++;
+				}    				
+			}
+		}
+	    
+	    return count;
+    }
+    
     private void discoverHalfFill(Shape shape) {
     	
     	// If the shape is solid then clearly can't be half-filled. If it is unknown then don't bother.
