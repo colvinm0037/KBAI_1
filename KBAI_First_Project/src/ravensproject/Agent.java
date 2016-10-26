@@ -484,7 +484,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem C-09"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem C-08"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -672,19 +672,42 @@ public class Agent {
     	System.out.println("Attempting to find solution with counting strategy");
 		
     	String answer = null;
+    	boolean increasing = false;
     	
+    	// If the shapes grow from left to right and top to bottom
     	if (diagramList.get("B").getPixelCount() > diagramList.get("A").getPixelCount() 
     			&& diagramList.get("C").getPixelCount() > diagramList.get("B").getPixelCount() 
     			&& diagramList.get("D").getPixelCount() > diagramList.get("A").getPixelCount()
     			&& diagramList.get("G").getPixelCount() > diagramList.get("D").getPixelCount()) {
-    		System.out.println("Valid scenario");
-    	} else {
+    		
+    		increasing = true;
+    		System.out.println("Valid scenario, increasing");    	
+    		
+    		
+    	} // If the shapes shrink from left to right and top to bottom
+    	else if (diagramList.get("B").getPixelCount() < diagramList.get("A").getPixelCount() 
+    			&& diagramList.get("C").getPixelCount() < diagramList.get("B").getPixelCount() 
+    			&& diagramList.get("D").getPixelCount() < diagramList.get("A").getPixelCount()
+    			&& diagramList.get("G").getPixelCount() < diagramList.get("D").getPixelCount()) {
+				
+    		increasing = false;
+			System.out.println("Valid scenario, decreasing");
+				
+		} else {
     		System.out.println("Not attempting");
     		return answer;
     	}
     	
-    	int difference = diagramList.get("H").getPixelCount() - diagramList.get("G").getPixelCount();
-    	int expectedCount = diagramList.get("H").getPixelCount() + difference;
+    	int difference = 0;    	
+    	int expectedCount = 0;
+    	
+    	if (increasing) {
+    		difference = diagramList.get("H").getPixelCount() - diagramList.get("G").getPixelCount();
+    		expectedCount = diagramList.get("H").getPixelCount() + difference;
+    	} else {
+    		difference = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
+    		expectedCount = diagramList.get("H").getPixelCount() - difference;
+    	}
     	
     	System.out.println("Difference: " + difference + ", expectedCount: " + expectedCount);
     	
