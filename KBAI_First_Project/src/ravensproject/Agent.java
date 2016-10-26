@@ -484,7 +484,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem C-08"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem C-09"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -664,6 +664,11 @@ public class Agent {
 	    	}
     	}
     	
+    	if (lowestCount > 0) {
+    		String countingSolution = countingStrategy2x2(diagramList);
+    		if (countingSolution != null) chosenAnswer = countingSolution;    		
+    	}
+    	
     	return chosenAnswer;    	
     }
     
@@ -726,13 +731,69 @@ public class Agent {
     	return answer;
     }
     
+    private String countingStrategy2x2(HashMap<String, Diagram> diagramList) {
+    	
+    	System.out.println("Attempting to find solution with counting strategy");
+		
+    	String answer = null;
+    	boolean increasing = false;
+    	
+    	// If the shapes grow from left to right and top to bottom
+    	if (diagramList.get("B").getPixelCount() > diagramList.get("A").getPixelCount() 
+    			&& diagramList.get("C").getPixelCount() > diagramList.get("A").getPixelCount()) {
+    		
+    		increasing = true;
+    		System.out.println("Valid scenario, increasing");
+    		
+    	} // If the shapes shrink from left to right and top to bottom
+    	else if (diagramList.get("B").getPixelCount() < diagramList.get("A").getPixelCount() 
+    			&& diagramList.get("C").getPixelCount() < diagramList.get("A").getPixelCount()) {
+				
+    		increasing = false;
+			System.out.println("Valid scenario, decreasing");
+				
+		} else {
+    		System.out.println("Not attempting");
+    		return answer;
+    	}
+    	
+    	int difference = 0;    	
+    	int expectedCount = 0;
+    	
+    	if (increasing) {
+    		difference = diagramList.get("B").getPixelCount() - diagramList.get("A").getPixelCount();
+    		expectedCount = diagramList.get("C").getPixelCount() + difference;
+    	} else {
+    		difference = diagramList.get("A").getPixelCount() - diagramList.get("B").getPixelCount();
+    		expectedCount = diagramList.get("C").getPixelCount() - difference;
+    	}
+    	
+    	System.out.println("Difference: " + difference + ", expectedCount: " + expectedCount);
+    	
+    	int diff = Integer.MAX_VALUE;
+    	
+    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6")) {
+    		
+    		if (Math.abs(expectedCount - diagramList.get(figure).getPixelCount()) < diff) {
+    			diff = Math.abs(expectedCount - diagramList.get(figure).getPixelCount());
+    			answer = figure;
+    		}
+    	}
+    	
+    	System.out.println("The final diff is: " + diff + " with figure: " + answer);
+    	
+    	return answer;
+    }
+    
     private String determineFinalAnswerFor3x3(HashMap<String, Diagram> diagramList) {
     	
     	System.out.println("Determining answer for 3x3 Problem");
     	
     	// Attempt the counting strategy, if it is valid then use that as the answer
     	String countingSolution = countingStrategy(diagramList);
-    	if (countingSolution != null) return countingSolution;
+    	if (countingSolution != null) {
+    		return countingSolution;
+    	}
     	
     	// Build Transformations between A->B and A->C
     	System.out.println();
@@ -741,7 +802,7 @@ public class Agent {
     	List<Transformation> bcTransformations = buildTransformations(diagramList.get("B"), diagramList.get("C"));
     	printTransformations(bcTransformations, diagramList.get("B"));
     	    	
-    	// Generate solutions by applying transformations from A->B onto C, and from A->C onto B
+    	// Generate solutions by applying transformations from A->B onto G, and from A->C onto H
     	Diagram GH = generateSolutionDiagram(diagramList.get("G"), abTransformations);
     	Diagram I = generateSolutionDiagram(GH, bcTransformations);
     	
@@ -771,6 +832,84 @@ public class Agent {
     	}
 		
 		if (lowestCount > 0) {
+			System.out.println("	ATTEMPTING A->D + D->G Strategy");
+			System.out.println("Currently, the chosen answer is " + chosenAnswer + ", with transformation count: " + transformationCount);
+
+			// Build transformations for A -> D and from D -> G and then apply them to C
+			
+			List<Transformation> adTransformations = buildTransformations(diagramList.get("A"), diagramList.get("D"));
+	    	printTransformations(adTransformations, diagramList.get("A"));
+	    	List<Transformation> dgTransformations = buildTransformations(diagramList.get("D"), diagramList.get("G"));
+	    	printTransformations(dgTransformations, diagramList.get("D"));
+	    	    	
+	    	// Generate solutions by applying transformations from A->B onto G, and from A->C onto H
+	    	Diagram CF = generateSolutionDiagram(diagramList.get("C"), adTransformations);
+	    	I = generateSolutionDiagram(CF, dgTransformations);
+	    	
+	    	System.out.println("\nComparing D to all of the available answers");
+	    		
+			for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+	    		
+	    		System.out.println("Comparing I to " + figure);	    		
+	    		
+	        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+	        	transformations2.addAll(buildTransformations(I, diagramList.get(figure)));
+	        	
+	        	transformationCount = transformations2.size();
+	    		System.out.println("TransformationCount: " + transformationCount);
+	    		System.out.println("*** These are all of the transformations from D -> " + figure);
+	        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+	        	
+	    		if (transformationCount <= lowestCount) {
+	    			lowestCount = transformationCount;
+	    			chosenAnswer = figure;
+	    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+	    		}    		
+	    	}
+		}
+		
+		if (lowestCount > 0) {
+			
+			System.out.println("	ATTEMPTING mini 2x2 Strategy");
+			System.out.println("Currently, the chosen answer is " + chosenAnswer + ", with transformation count: " + transformationCount);
+			// Build transformations for E -> F and from E -> H and then apply them to E
+			
+	    	List<Transformation> fTransformations = buildTransformations(diagramList.get("E"), diagramList.get("F"));
+	    	printTransformations(fTransformations, diagramList.get("E"));
+	    	List<Transformation> hTransformations = buildTransformations(diagramList.get("E"), diagramList.get("H"));
+	    	printTransformations(hTransformations, diagramList.get("E"));
+	    	
+	    	List<Transformation> fhTransformations = new ArrayList<Transformation>();
+	    	bcTransformations.addAll(fTransformations);
+	    	bcTransformations.addAll(hTransformations);
+	    	
+	    	I = generateSolutionDiagram(diagramList.get("E"), fhTransformations);
+	    	
+	    	System.out.println("\nComparing D to all of the available answers");
+	    		
+			for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+	    		
+	    		System.out.println("Comparing I to " + figure);	    		
+	    		
+	        	List<Transformation> transformations2 = new ArrayList<Transformation>();        	
+	        	transformations2.addAll(buildTransformations(I, diagramList.get(figure)));
+	        	
+	        	transformationCount = transformations2.size();
+	    		System.out.println("TransformationCount: " + transformationCount);
+	    		System.out.println("*** These are all of the transformations from D -> " + figure);
+	        	for (Transformation t : transformations2) System.out.println(t.getTransformation());
+	        	
+	    		if (transformationCount <= lowestCount) {
+	    			lowestCount = transformationCount;
+	    			chosenAnswer = figure;
+	    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
+	    		}    		
+	    	}
+		}
+		
+		if (lowestCount >= 0) {
+			
+			// Take transformations from A -> C and A-> G and apply them to A
 			
 			System.out.println("\n\n\n\nAttempting the corner strategy");
 			System.out.println("Currently, the chosen answer is " + chosenAnswer + ", with transformation count: " + transformationCount);
@@ -988,7 +1127,7 @@ public class Agent {
 	    			}
 	    			
 	    			System.out.println("This is a rotation transformation with rotation: " + t.getRotation());
-	    			shape.setRotation(shape.getRotation() + t.getRotation() % 360);
+	    			shape.setRotation((shape.getRotation() + t.getRotation()) % 360);
 	    		}
 
 	    		if (t.getTransformation() == Transformations.SHIFT_X) {
