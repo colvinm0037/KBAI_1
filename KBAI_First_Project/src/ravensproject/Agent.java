@@ -445,6 +445,9 @@ public class Agent {
     }
            
     private List<Shape> unknownShapes = new ArrayList<Shape>();
+    private boolean disableMirroring = false;
+    private boolean disableSizing = true;
+    private boolean disableDeletionIndexing = true;
     
     /**
      * The primary method for solving incoming Raven's Progressive Matrices.
@@ -482,21 +485,30 @@ public class Agent {
     	// 1 - Triangles only work with zero rotation
     	
     	//if (!( problem.getName().equals("Basic Problem C-09"))) return -1;
-    	//if (!( problem.getName().equals("Challenge Problem B-11"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
+    	disableMirroring = false;
+    	disableSizing = true;
+    	disableDeletionIndexing = true;
+    	unknownShapes.clear();
+    	
     	boolean isThreeByThree = false;
-    	if (problem.getProblemType().equals("3x3")) isThreeByThree = true;
+    	if (problem.getProblemType().equals("3x3")) {
+    		isThreeByThree = true;
+    		disableMirroring = true;
+    		disableSizing = false;
+    		disableDeletionIndexing = false;
+    	}
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
     	
-    	unknownShapes.clear();
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
     	    
     	buildShapesInDiagrams(diagramList, isThreeByThree);
     
     	String chosenAnswer = "";
-    	if (!isThreeByThree) {
+    	if (!isThreeByThree) {    		
     		chosenAnswer = determineFinalAnswerFor2x2(diagramList);
     	} else {
     		chosenAnswer = determineFinalAnswerFor3x3(diagramList);
@@ -862,6 +874,9 @@ public class Agent {
     	List<Shape> shapeList = new ArrayList<Shape>();
     	solution.setName("D");
 
+    	for (Transformation t : transformations) System.out.print(t.getTransformation() + "-" + t.getIndexOfShape() + ", ");
+    	System.out.println();
+    	
     	// Delete the shapes that are removed
     	for (int i = 0; i < A.getShapeList().size(); i++) {
     		
@@ -869,7 +884,7 @@ public class Agent {
     		
     		for (Transformation t : transformations) {
 	    		
-    			if (t.getIndexOfShape() != i) continue;
+    			if (t.getIndexOfShape() != i && !disableDeletionIndexing) continue;
     			
 	    		if (t.getTransformation() == Transformations.DELETESHAPE) {
 	    			System.out.println("Delete this shape");
@@ -1153,24 +1168,26 @@ public class Agent {
     	if (s1.getShape() != Shapes.SQUARE && s1.getShape() != Shapes.CIRCLE && s1.getShape() != Shapes.PLUS 
     			&& s1.getShape() != Shapes.OCTAGON && s1.getShape() != Shapes.DIAMOND && s1.getShape() != Shapes.HEART) {
     		
-    		// TODO: Disabled mirroring
-//    		Shape mirroredXWise = mirrorOverXAxis(s2);
-//        	Shape mirroredYWise = mirrorOverYAxis(s2);
-//        	
-//        	buildShape(mirroredXWise.getShapeMatrix(), mirroredXWise);
-//        	buildShape(mirroredYWise.getShapeMatrix(), mirroredYWise);
-//        	
-//        	if (s1.getShape() == mirroredXWise.getShape() && s1.getRotation() == mirroredXWise.getRotation()) {
-//            	// x-wise mirror
-//        		isMirroring = true;
-//            	transformations.add(new Transformation(indexOfShape, true));
-//        	}
-//        	
-//        	if (s1.getShape() == mirroredYWise.getShape() && s1.getRotation() == mirroredYWise.getRotation()) {
-//            	// y-wise mirror
-//        		isMirroring = true;
-//            	transformations.add(new Transformation(indexOfShape, false));        	
-//        	}		
+    		// Disabling mirroring for 3x3 Problems
+    		if (!disableMirroring) {
+	    		Shape mirroredXWise = mirrorOverXAxis(s2);
+	        	Shape mirroredYWise = mirrorOverYAxis(s2);
+	        	
+	        	buildShape(mirroredXWise.getShapeMatrix(), mirroredXWise);
+	        	buildShape(mirroredYWise.getShapeMatrix(), mirroredYWise);
+	        	
+	        	if (s1.getShape() == mirroredXWise.getShape() && s1.getRotation() == mirroredXWise.getRotation()) {
+	            	// x-wise mirror
+	        		isMirroring = true;
+	            	transformations.add(new Transformation(indexOfShape, true));
+	        	}
+	        	
+	        	if (s1.getShape() == mirroredYWise.getShape() && s1.getRotation() == mirroredYWise.getRotation()) {
+	            	// y-wise mirror
+	        		isMirroring = true;
+	            	transformations.add(new Transformation(indexOfShape, false));        	
+	        	}		
+    		}
     	}
     	
     	// Only bother checking if we don't have a Mirroring
@@ -1207,7 +1224,7 @@ public class Agent {
 			transformations.add(new Transformation(indexOfShape, s1.getTexture(), s2.getTexture()));
 		}
 		
-		if (s1.getSize() != s2.getSize()) {
+		if (s1.getSize() != s2.getSize() && !disableSizing) {
 			transformations.add(new Transformation(indexOfShape, s1.getSize(), s2.getSize()));
 		}
 		
