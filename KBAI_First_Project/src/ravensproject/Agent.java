@@ -478,6 +478,52 @@ public class Agent {
     	// TODO: Refactor code
     	// TODO: PACMAN Shapes are considered unknown when they have 45 degree rotations     	
     	
+    	
+    	// ** Project 3 **
+    	
+    	// Problem Set D (Harder?)
+    	// 01: Simple (Working)
+    	// 02: Shape1 -> Shape2 -> Shape3 -> Shape1 (Not working)
+    	// 03: Pattern1 -> Pattern2 -> Pattern3 -> Pattern1 (Working)
+    	// 04: One shape changes, other doesn't (Not working, but should be it seems like?)
+    	// 05: Hard question (Working)
+    	// 06: Basic, adding and removing shapes (Working)
+    	// 07: Multiple patterns, like #2, but more complex (Not working)
+    	// 08: Shape order like #2, but texture changes (Not working)
+    	// 09: Shape order like #2, but also with addition/subtraction of pattern (Not working)
+    	// 10: Shape order like #2, but two over lapping strings of shapes (Not working)
+    	// 11: Keep shape outline, but invert contents (Not working)
+    	// 12: Shape order like #2, but changing number of shapes. (Not working)
+    	
+    	// Ideas for D:
+    	
+    	// Problem Set E (Easier?)
+    	// 01: Adding shapes together (Not working, because pixel counting fails)
+    	// 02: Adding shapes together (Working, because of pixel counting and no overlap)
+    	// 03: Adding shapes together, with some overlap (Not working)
+    	// 04: Subtracting shapes (Not working)
+    	// 05: Shapes changing (Working)
+    	// 06: Adding shapes together, in a strange order (Not working)
+    	// 07: Adding and subtracting (Not working) 
+    	// 08: Adding and subtracting (Not working)
+    	// 09: Shapes changing with odd reasoning (Not working)
+    	// 10: Pixel subtraction (Not working)
+    	// 11: Pixels that exist in first two are what the third is (Not working)
+    	// 12: Shape deletion depending on what is in the next frame (Not working)
+
+    	// All of the problems in these two problems sets are easily handled by only looking at horizontal relationships. Some 
+    	// could use the benefit of looking the diagonal relationship.
+    	
+    	// Ideas for E:
+    	// Most of E seems to deal with adding, subtracting, and taking of difference of shapes.
+    	// 1, 2, 3 would all work by adding the new pixels in H to G. If a pixel exists in H and G don't add it.
+    	// 4 would work by subtracting # of pixels in H from G, but wouldn't get the right answer.
+    	// 6 would work By subtracting unique pixels in G from H
+    	// 7 and 8 work by adding only the unique things in G and H, with some trickery in terms of overlapping
+    	// 9?
+    	// 10 and 11 work by only taking the common pixels in G & H
+    	// 12 would work by subtracting # of pixels in H from G, but wouldn't get the right answer.
+    	
     	// Basic Problems
     	// 1 - Star and pentagon are same type of unknown
     	
