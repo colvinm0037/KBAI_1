@@ -530,7 +530,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem C-09"))) return -1;
+    	if (!( problem.getName().equals("Basic Problem E-07"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -720,61 +720,170 @@ public class Agent {
     
     private String countingStrategy(HashMap<String, Diagram> diagramList) {
     	
-    	System.out.println("Attempting to find solution with counting strategy");
-		
+    	System.out.println("Attempting to find solution with counting strategy");		
     	String answer = null;
     	boolean increasing = false;
     	
-    	// If the shapes grow from left to right and top to bottom
-    	if (diagramList.get("B").getPixelCount() > diagramList.get("A").getPixelCount() 
-    			&& diagramList.get("C").getPixelCount() > diagramList.get("B").getPixelCount() 
-    			&& diagramList.get("D").getPixelCount() > diagramList.get("A").getPixelCount()
-    			&& diagramList.get("G").getPixelCount() > diagramList.get("D").getPixelCount()) {
-    		
-    		increasing = true;
-    		System.out.println("Valid scenario, increasing");    	
-    		
-    		
-    	} // If the shapes shrink from left to right and top to bottom
-    	else if (diagramList.get("B").getPixelCount() < diagramList.get("A").getPixelCount() 
-    			&& diagramList.get("C").getPixelCount() < diagramList.get("B").getPixelCount() 
-    			&& diagramList.get("D").getPixelCount() < diagramList.get("A").getPixelCount()
-    			&& diagramList.get("G").getPixelCount() < diagramList.get("D").getPixelCount()) {
-				
-    		increasing = false;
-			System.out.println("Valid scenario, decreasing");
-				
-		} else {
-    		System.out.println("Not attempting");
-    		return answer;
+    	// Project 3 logic
+    	    	
+		// IF A + B = C and D + E = F then do G + H, but don't add overlapping pixels
+		
+		// A + B - Overlap = C then do this
+		int abOverlap = countOverlappingPixels(diagramList.get("A"), diagramList.get("B"));
+		int deOverlap = countOverlappingPixels(diagramList.get("D"), diagramList.get("E"));
+		int ghOverlap = countOverlappingPixels(diagramList.get("G"), diagramList.get("H"));
+		
+		int adOverlap = countOverlappingPixels(diagramList.get("A"), diagramList.get("D"));
+		int beOverlap = countOverlappingPixels(diagramList.get("B"), diagramList.get("E"));
+		int cfOverlap = countOverlappingPixels(diagramList.get("C"), diagramList.get("F"));
+		
+		System.out.println("A count: " + diagramList.get("A").getPixelCount());
+		System.out.println("B count: " + diagramList.get("B").getPixelCount());
+		System.out.println("abCount: " + abOverlap);
+		System.out.println("C count: " + diagramList.get("C").getPixelCount());
+		System.out.println("= " + (diagramList.get("A").getPixelCount() + diagramList.get("B").getPixelCount() - abOverlap*2));
+		
+		
+		// For problem 7 we get the exact # of pixels!
+		
+		// TODO: For problem 7, horizontal gets a little screwy, but vertical would work okay. Do both.
+		
+		// Case: C is all the shapes in A plus the shapes in B, but with any shapes in both A and B excluded from C
+		
+		// Adding a and b and removing the overlap completely. Have to do 2*overlap because overlap is in both diagram!
+		int expectedPixelCountInC = diagramList.get("A").getPixelCount() + diagramList.get("B").getPixelCount() - abOverlap*2;
+		int expectedPixelCountInF = diagramList.get("D").getPixelCount() + diagramList.get("E").getPixelCount() - deOverlap*2;
+		int expectedPixelCountInG = diagramList.get("A").getPixelCount() + diagramList.get("D").getPixelCount() - adOverlap*2;
+		int expectedPixelCountInH = diagramList.get("B").getPixelCount() + diagramList.get("E").getPixelCount() - beOverlap*2;
+		
+		int expectedCountOne = 0;
+		int expectedCountTwo = 0;
+		
+    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < 150
+    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < 150)
+    		||
+    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
+    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
+    	
+    		System.out.println("CASE: Shapes in A + Shapes in B - Shapes in both");
+    		expectedCountOne = diagramList.get("G").getPixelCount() + diagramList.get("H").getPixelCount() - ghOverlap*2;
+    		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap*2;    		
     	}
-    	
-    	int difference = 0;    	
-    	int expectedCount = 0;
-    	
-    	if (increasing) {
-    		difference = diagramList.get("H").getPixelCount() - diagramList.get("G").getPixelCount();
-    		expectedCount = diagramList.get("H").getPixelCount() + difference;
-    	} else {
-    		difference = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
-    		expectedCount = diagramList.get("H").getPixelCount() - difference;
+	
+    	// If none of the Project 3 strategies were used
+    	if (expectedCountOne == 0) {
+    		
+    		// Project 2 logic
+    		
+    		// If the shapes grow from left to right and top to bottom
+	    	if (diagramList.get("B").getPixelCount() > diagramList.get("A").getPixelCount() 
+	    			&& diagramList.get("C").getPixelCount() > diagramList.get("B").getPixelCount() 
+	    			&& diagramList.get("D").getPixelCount() > diagramList.get("A").getPixelCount()
+	    			&& diagramList.get("G").getPixelCount() > diagramList.get("D").getPixelCount()) {
+	    		
+	    		increasing = true;
+	    		System.out.println("Valid scenario, increasing");    	
+	    		
+	    		
+	    	} // If the shapes shrink from left to right and top to bottom
+	    	else if (diagramList.get("B").getPixelCount() < diagramList.get("A").getPixelCount() 
+	    			&& diagramList.get("C").getPixelCount() < diagramList.get("B").getPixelCount() 
+	    			&& diagramList.get("D").getPixelCount() < diagramList.get("A").getPixelCount()
+	    			&& diagramList.get("G").getPixelCount() < diagramList.get("D").getPixelCount()) {
+					
+	    		increasing = false;
+				System.out.println("Valid scenario, decreasing");
+					
+	    	} else {
+	    		System.out.println("Not attempting");
+	    		return answer;
+	    	}
+	    	
+	    	int difference = 0;    	
+	    	int expectedCount = 0;
+	    	
+	    	if (increasing) {
+	    		difference = diagramList.get("H").getPixelCount() - diagramList.get("G").getPixelCount();
+	    		expectedCount = diagramList.get("H").getPixelCount() + difference;
+	    	} else {
+	    		difference = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
+	    		expectedCount = diagramList.get("H").getPixelCount() - difference;
+	    	}
+	    	
+	    	System.out.println("Difference: " + difference + ", expectedCount: " + expectedCount);
+
+	    	// Find the diagram with the closest number of pixels to our expected number
+	    	int diff = Integer.MAX_VALUE;
+	    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+	    		
+	    		if (Math.abs(expectedCount - diagramList.get(figure).getPixelCount()) < diff) {
+	    			diff = Math.abs(expectedCount - diagramList.get(figure).getPixelCount());
+	    			answer = figure;
+	    		}
+	    	}
+	    	
+	    	System.out.println("The final diff is: " + diff + " with figure: " + answer);
+	    	
+	    	return answer;
     	}
+    	    	
+    	answer = findBestMatchPixelCountMatch(expectedCountOne, expectedCountTwo, diagramList);
+    	return answer;    	    	
+    }
+    
+    private String findBestMatchPixelCountMatch(int expectedCountOne, int expectedCountTwo, HashMap<String, Diagram> diagramList) {
     	
-    	System.out.println("Difference: " + difference + ", expectedCount: " + expectedCount);
+    	System.out.println("ExpectedCountOne: " + expectedCountOne + ", expectedCountTwo: " + expectedCountTwo);
     	
-    	int diff = Integer.MAX_VALUE;
+    	// Given two expected values, find the answer diagram that has the closest number of pixels to each one.
+    	// Whichever diagram matches up with the smallest difference is returned.
+    	
+    	// Find the diagram with the closest number of pixels to our expected number
+    	String answer1 = "";
+    	String answer2 = "";
+    	int diff1 = Integer.MAX_VALUE;
+    	int diff2 = Integer.MAX_VALUE;
     	
     	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
     		
-    		if (Math.abs(expectedCount - diagramList.get(figure).getPixelCount()) < diff) {
-    			diff = Math.abs(expectedCount - diagramList.get(figure).getPixelCount());
-    			answer = figure;
+    		System.out.println("Pixel Count " + figure + ": " + diagramList.get(figure).getPixelCount());
+    		
+    		if (Math.abs(expectedCountOne - diagramList.get(figure).getPixelCount()) < diff1) {
+    			diff1 = Math.abs(expectedCountOne - diagramList.get(figure).getPixelCount());
+    			answer1 = figure;
     		}
     	}
     	
-    	System.out.println("The final diff is: " + diff + " with figure: " + answer);
+    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    		if (Math.abs(expectedCountTwo - diagramList.get(figure).getPixelCount()) < diff2) {
+    			diff2 = Math.abs(expectedCountTwo - diagramList.get(figure).getPixelCount());
+    			answer2 = figure;
+    		}
+    	}
     	
-    	return answer;
+    	System.out.println("The final difference for expectedCountOne is: " + diff1 + " with figure: " + answer1);
+    	System.out.println("The final difference for expectedCountTwo is: " + diff2 + " with figure: " + answer2);
+    	
+    	if (diff1 < diff2) {
+    		return answer1;
+    	} else {
+    		return answer2;
+    	}
+    }
+    
+    private int countOverlappingPixels(Diagram d1, Diagram d2) {
+    	
+    	int overlapCount = 0;
+    	
+    	for (int j = 0; j < 184; j++) {
+    		for (int i = 0; i < 184; i++) {
+    			if (d1.getMatrix()[i][j] && d2.getMatrix()[i][j]) {
+    				overlapCount++;
+    			}    				
+    		}
+    	}
+    
+    	return overlapCount;
     }
     
     private String countingStrategy2x2(HashMap<String, Diagram> diagramList) {
