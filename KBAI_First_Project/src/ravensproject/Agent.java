@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -530,7 +531,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem E-03"))) return -1;
+    	if (!( problem.getName().equals("Basic Problem E-12"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -801,6 +802,22 @@ public class Agent {
     		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap;    		
     	}
     	
+    	// Case #4: C is the stuff in A minus the stuff in B
+    	expectedPixelCountInC = diagramList.get("A").getPixelCount() - diagramList.get("B").getPixelCount();
+    	expectedPixelCountInF = diagramList.get("D").getPixelCount() - diagramList.get("E").getPixelCount();
+    	expectedPixelCountInG = diagramList.get("A").getPixelCount() - diagramList.get("D").getPixelCount();
+    	expectedPixelCountInH = diagramList.get("B").getPixelCount() - diagramList.get("E").getPixelCount();
+    							
+    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < 150
+    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < 150)
+    		||
+    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
+    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
+    	
+    		System.out.println("CASE #4: Shapes in A - Shapes in B = C");
+    		expectedCountOne = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
+    		expectedCountTwo = diagramList.get("C").getPixelCount() - diagramList.get("F").getPixelCount();    		
+    	}
     	
     	// If none of the Project 3 strategies were used
     	if (expectedCountOne == 0) {
@@ -876,7 +893,7 @@ public class Agent {
     	int diff1 = Integer.MAX_VALUE;
     	int diff2 = Integer.MAX_VALUE;
     	
-    	// TODO: This method does much more than intended, refactor.
+    	// TODO: This method does way more than intended, refactor.
     	
     	// Crazy idea, only look at good answers. Remove any of the answer diagrams that are identical to C, F, G, or H
     	List<String> answersToCheck = new ArrayList<String>();
@@ -884,32 +901,28 @@ public class Agent {
     	// For each answer
     	for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
     		
-    		boolean skipAnswer = false;
+    		// Check to see if the answer diagram is identical to C, F, G or H, and skip it if it is an exact match
+    		boolean isMatch = doesAnswerMatchDiagramInList(diagramList, answer, Arrays.asList("C", "F", "G", "H"));
     		
-    		// Compare it to C F G and H
-    		for (String diagram : Arrays.asList("C", "F", "G", "H")) {
-    			
-    			int overlap = countOverlappingPixels(diagramList.get(answer), diagramList.get(diagram));
-    			int diagramCount = diagramList.get(diagram).getPixelCount();
-    			int answerCount = diagramList.get(answer).getPixelCount();
-    			
-    			// System.out.println("Answer: " + answer + ", Diagram: " + diagram + ", Overlap: " + overlap + ", answerCount: " + answerCount + ", diagramCount: " + diagramCount);
-    			
-    			// If the two diagrams have about the same pixel count and the overlap is close to the number of pixels then skip it.
-    			// Note: Some diagrams look identical but are slightly different, hence the lazy math here. Perfect precision doesn't work.
-    			if (Math.abs(answerCount - diagramCount) < 100 && Math.abs(Math.min(answerCount, diagramCount) - overlap) < 100) {
-    				skipAnswer = true;
-    				System.out.println("Skipping " + answer + " because " + diagram + " matches it.");
-    				break;
-    			}
-    		}
-    		
-    		if (!skipAnswer) {
+    		if (!isMatch) {
 				answersToCheck.add(answer);
 			}
     	}
     	
+    	// When filtering answers, if we have two answers with the identical number of pixels, then we will always pick the first one.
+    	// There should be some way to remove whichever one is worse.
+    	// Idea: If one of them is identical to an existing diagram, remove it?
+    	
+    	// Find every pixel count that more than one answer diagram has
+    	HashSet<Integer> duplicates = findDuplicatedPixelCounts(diagramList, answersToCheck);
+    	
+    	// For answer diagrams with the same pixel count, we only want to look at one
+    	List<String> duplicatesToSkip = findDuplicateDiagramsToSkip(diagramList, answersToCheck, duplicates);
+    	
+    	// Update the list of answers to look at
+    	removeDuplicateAnswersFromList(answersToCheck, duplicatesToSkip);
     	    	
+    	// Find the diagram that matches closest to the first expected pixel count
     	for (String figure : answersToCheck) {
     		
     		System.out.println("Pixel Count " + figure + ": " + diagramList.get(figure).getPixelCount());
@@ -920,6 +933,7 @@ public class Agent {
     		}
     	}
     	
+    	// Find the diagram that matches closest to the second expected pixel count
     	for (String figure : answersToCheck) {
     		if (Math.abs(expectedCountTwo - diagramList.get(figure).getPixelCount()) < diff2) {
     			diff2 = Math.abs(expectedCountTwo - diagramList.get(figure).getPixelCount());
@@ -930,12 +944,94 @@ public class Agent {
     	System.out.println("The final difference for expectedCountOne is: " + diff1 + " with figure: " + answer1);
     	System.out.println("The final difference for expectedCountTwo is: " + diff2 + " with figure: " + answer2);
     	
+    	// Return whichever figure matched up the best
     	if (diff1 < diff2) {
     		return answer1;
     	} else {
     		return answer2;
     	}
     }
+
+	private void removeDuplicateAnswersFromList(List<String> answersToCheck, List<String> duplicatesToSkip) {
+		
+		List<String> tempList = new ArrayList<String>();
+    	tempList.addAll(answersToCheck);
+    	answersToCheck.clear();
+    	
+    	for (String figure : tempList) {    		
+    		if (!duplicatesToSkip.contains(figure)) {
+    			answersToCheck.add(figure);
+    		}    		
+    	}
+	}
+
+	private List<String> findDuplicateDiagramsToSkip(HashMap<String, Diagram> diagramList, List<String> answersToCheck,	HashSet<Integer> duplicates) {
+		
+		List<String> duplicatesToSkip = new ArrayList<String>();
+    	
+    	// For each pixel count that we have more than one diagram with that number of pixels
+    	for (int pixelCount : duplicates) {
+    		System.out.println("Duplicate pixelCount: " + pixelCount);
+    		
+    		// Look at all of the diagrams with that many pixels
+    		for (String answer : answersToCheck) {
+    			if (diagramList.get(answer).getPixelCount() != pixelCount) continue;
+    			
+    			// Not making this super robust.
+    			// If any of these are replicas of existing diagrams then skip them
+    			boolean isMatch = doesAnswerMatchDiagramInList(diagramList, answer, Arrays.asList("A", "B", "D", "E"));
+        		
+        		if (isMatch) {
+        			duplicatesToSkip.add(answer);
+    			}
+    		}
+    	}
+    	
+		return duplicatesToSkip;
+	}
+
+	private HashSet<Integer> findDuplicatedPixelCounts(
+			HashMap<String, Diagram> diagramList, List<String> answersToCheck) {
+		HashSet<Integer> duplicates = new HashSet<Integer>();
+    	
+    	// for each remaining answer, find all of the answers that have the same number of pixels
+    	for (String figure : answersToCheck) {
+    		
+    		for (String figure2 : answersToCheck) {
+    			
+    			if (figure.equals(figure2)) continue;
+    			
+    			if (diagramList.get(figure).getPixelCount() == diagramList.get(figure2).getPixelCount()) {
+    				duplicates.add(diagramList.get(figure).getPixelCount());
+    			}
+    		}
+    	}
+		return duplicates;
+	}
+
+	private boolean doesAnswerMatchDiagramInList(HashMap<String, Diagram> diagramList, String answer, List<String> diagramsToCompareAgainst) {
+		
+		boolean isMatch = false;
+		
+		// Compare it to C F G and H
+		for (String diagram : diagramsToCompareAgainst) {
+			
+			int overlap = countOverlappingPixels(diagramList.get(answer), diagramList.get(diagram));
+			int diagramCount = diagramList.get(diagram).getPixelCount();
+			int answerCount = diagramList.get(answer).getPixelCount();
+			
+			// System.out.println("Answer: " + answer + ", Diagram: " + diagram + ", Overlap: " + overlap + ", answerCount: " + answerCount + ", diagramCount: " + diagramCount);
+			
+			// If the two diagrams have about the same pixel count and the overlap is close to the number of pixels then skip it.
+			// Note: Some diagrams look identical but are slightly different, hence the lazy math here. Perfect precision doesn't work.
+			if (Math.abs(answerCount - diagramCount) < 100 && Math.abs(Math.min(answerCount, diagramCount) - overlap) < 100) {
+				isMatch = true;
+				System.out.println("Skipping " + answer + " because " + diagram + " matches it.");
+				break;
+			}
+		}
+		return isMatch;
+	}
     
     private int countOverlappingPixels(Diagram d1, Diagram d2) {
     	
