@@ -530,7 +530,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	if (!( problem.getName().equals("Basic Problem E-07"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem E-11"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -547,7 +547,6 @@ public class Agent {
     	}
     	
     	System.out.println("Name: " + problem.getName() + ", Type: " + problem.getProblemType());
-    	
     	
     	HashMap<String, Diagram> diagramList = buildDiagramList(problem);
     	    
@@ -728,7 +727,6 @@ public class Agent {
     	    	
 		// IF A + B = C and D + E = F then do G + H, but don't add overlapping pixels
 		
-		// A + B - Overlap = C then do this
 		int abOverlap = countOverlappingPixels(diagramList.get("A"), diagramList.get("B"));
 		int deOverlap = countOverlappingPixels(diagramList.get("D"), diagramList.get("E"));
 		int ghOverlap = countOverlappingPixels(diagramList.get("G"), diagramList.get("H"));
@@ -739,17 +737,21 @@ public class Agent {
 		
 		System.out.println("A count: " + diagramList.get("A").getPixelCount());
 		System.out.println("B count: " + diagramList.get("B").getPixelCount());
-		System.out.println("abCount: " + abOverlap);
+		System.out.println("abOverlap: " + abOverlap);
+		System.out.println();
+		System.out.println("G count: " + diagramList.get("G").getPixelCount());
+		System.out.println("H count: " + diagramList.get("H").getPixelCount());
+		System.out.println("ghOverlap: " + ghOverlap);
 		System.out.println("C count: " + diagramList.get("C").getPixelCount());
-		System.out.println("= " + (diagramList.get("A").getPixelCount() + diagramList.get("B").getPixelCount() - abOverlap*2));
+		System.out.println("F count: " + diagramList.get("F").getPixelCount());
+		System.out.println("cfOverlap: " + cfOverlap);
 		
 		
-		// For problem 7 we get the exact # of pixels!
 		
-		// TODO: For problem 7, horizontal gets a little screwy, but vertical would work okay. Do both.
 		
-		// Case: C is all the shapes in A plus the shapes in B, but with any shapes in both A and B excluded from C
-		
+		// Case #1: C is all the shapes in A plus the shapes in B, but with any shapes in both A and B excluded from C
+		// For problem E-7 
+				
 		// Adding a and b and removing the overlap completely. Have to do 2*overlap because overlap is in both diagram!
 		int expectedPixelCountInC = diagramList.get("A").getPixelCount() + diagramList.get("B").getPixelCount() - abOverlap*2;
 		int expectedPixelCountInF = diagramList.get("D").getPixelCount() + diagramList.get("E").getPixelCount() - deOverlap*2;
@@ -765,11 +767,24 @@ public class Agent {
     			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
     					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
     	
-    		System.out.println("CASE: Shapes in A + Shapes in B - Shapes in both");
+    		System.out.println("CASE #1: Shapes in A + Shapes in B - Shapes in both");
     		expectedCountOne = diagramList.get("G").getPixelCount() + diagramList.get("H").getPixelCount() - ghOverlap*2;
     		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap*2;    		
     	}
 	
+    	// Case: C is just the overlap of A and B
+    	if ( (Math.abs(abOverlap - diagramList.get("C").getPixelCount()) < 150
+    			&& Math.abs(deOverlap - diagramList.get("F").getPixelCount()) < 150)
+    		||
+    			(Math.abs(adOverlap - diagramList.get("G").getPixelCount()) < 150
+    					&& Math.abs(beOverlap - diagramList.get("H").getPixelCount()) < 150) ) {
+    	
+    		System.out.println("CASE #2: Shape in C is just overlap of A and B");
+    		expectedCountOne = ghOverlap;
+    		expectedCountTwo = cfOverlap;    		
+    	}
+    	
+    	
     	// If none of the Project 3 strategies were used
     	if (expectedCountOne == 0) {
     		
@@ -844,7 +859,41 @@ public class Agent {
     	int diff1 = Integer.MAX_VALUE;
     	int diff2 = Integer.MAX_VALUE;
     	
-    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    	// TODO: This method does much more than intended, refactor.
+    	
+    	// Crazy idea, only look at good answers. Remove any of the answer diagrams that are identical to C, F, G, or H
+    	List<String> answersToCheck = new ArrayList<String>();
+    	
+    	// For each answer
+    	for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    		
+    		boolean skipAnswer = false;
+    		
+    		// Compare it to C F G and H
+    		for (String diagram : Arrays.asList("C", "F", "G", "H")) {
+    			
+    			int overlap = countOverlappingPixels(diagramList.get(answer), diagramList.get(diagram));
+    			int diagramCount = diagramList.get(diagram).getPixelCount();
+    			int answerCount = diagramList.get(answer).getPixelCount();
+    			
+    			// System.out.println("Answer: " + answer + ", Diagram: " + diagram + ", Overlap: " + overlap + ", answerCount: " + answerCount + ", diagramCount: " + diagramCount);
+    			
+    			// If the two diagrams have about the same pixel count and the overlap is close to the number of pixels then skip it.
+    			// Note: Some diagrams look identical but are slightly different, hence the lazy math here. Perfect precision doesn't work.
+    			if (Math.abs(answerCount - diagramCount) < 100 && Math.abs(Math.min(answerCount, diagramCount) - overlap) < 100) {
+    				skipAnswer = true;
+    				System.out.println("Skipping " + answer + " because " + diagram + " matches it.");
+    				break;
+    			}
+    		}
+    		
+    		if (!skipAnswer) {
+				answersToCheck.add(answer);
+			}
+    	}
+    	
+    	    	
+    	for (String figure : answersToCheck) {
     		
     		System.out.println("Pixel Count " + figure + ": " + diagramList.get(figure).getPixelCount());
     		
@@ -854,7 +903,7 @@ public class Agent {
     		}
     	}
     	
-    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    	for (String figure : answersToCheck) {
     		if (Math.abs(expectedCountTwo - diagramList.get(figure).getPixelCount()) < diff2) {
     			diff2 = Math.abs(expectedCountTwo - diagramList.get(figure).getPixelCount());
     			answer2 = figure;
