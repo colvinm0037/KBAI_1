@@ -530,7 +530,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem E-11"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem E-03"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -772,7 +772,7 @@ public class Agent {
     		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap*2;    		
     	}
 	
-    	// Case: C is just the overlap of A and B
+    	// Case #2: C is just the overlap of A and B
     	if ( (Math.abs(abOverlap - diagramList.get("C").getPixelCount()) < 150
     			&& Math.abs(deOverlap - diagramList.get("F").getPixelCount()) < 150)
     		||
@@ -782,6 +782,23 @@ public class Agent {
     		System.out.println("CASE #2: Shape in C is just overlap of A and B");
     		expectedCountOne = ghOverlap;
     		expectedCountTwo = cfOverlap;    		
+    	}
+
+    	// Case #3: C is the stuff in A + B, but remember not to count overlap twice
+    	expectedPixelCountInC = diagramList.get("A").getPixelCount() + diagramList.get("B").getPixelCount() - abOverlap;
+    	expectedPixelCountInF = diagramList.get("D").getPixelCount() + diagramList.get("E").getPixelCount() - deOverlap;
+    	expectedPixelCountInG = diagramList.get("A").getPixelCount() + diagramList.get("D").getPixelCount() - adOverlap;
+    	expectedPixelCountInH = diagramList.get("B").getPixelCount() + diagramList.get("E").getPixelCount() - beOverlap;
+    							
+    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < 150
+    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < 150)
+    		||
+    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
+    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
+    	
+    		System.out.println("CASE #3: Shapes in A + Shapes in B = C");
+    		expectedCountOne = diagramList.get("G").getPixelCount() + diagramList.get("H").getPixelCount() - ghOverlap;
+    		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap;    		
     	}
     	
     	
