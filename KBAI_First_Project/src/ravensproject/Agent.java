@@ -531,7 +531,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	if (!( problem.getName().equals("Basic Problem E-12"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem E-06"))) return -1;
     	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
 
     	disableMirroring = false;
@@ -747,9 +747,6 @@ public class Agent {
 		System.out.println("F count: " + diagramList.get("F").getPixelCount());
 		System.out.println("cfOverlap: " + cfOverlap);
 		
-		
-		
-		
 		// Case #1: C is all the shapes in A plus the shapes in B, but with any shapes in both A and B excluded from C
 		// For problem E-7 
 				
@@ -817,6 +814,46 @@ public class Agent {
     		System.out.println("CASE #4: Shapes in A - Shapes in B = C");
     		expectedCountOne = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
     		expectedCountTwo = diagramList.get("C").getPixelCount() - diagramList.get("F").getPixelCount();    		
+    	}
+    	
+    	// Case #5: B = C + A - Overlap(A, C)
+    	// For this case, we can't write C as a function of A and B. Instead we have an equation, and we can try plugging in each
+    	// of the available answers until we find the one that fits.
+    	
+    	int expectedPixelCountInB = diagramList.get("A").getPixelCount() + diagramList.get("C").getPixelCount() - countOverlappingPixels(diagramList.get("A"), diagramList.get("C"));
+    	int expectedPixelCountInE1 = diagramList.get("D").getPixelCount() + diagramList.get("F").getPixelCount() - countOverlappingPixels(diagramList.get("D"), diagramList.get("F"));
+    	
+    	int expectedPixelCountInD = diagramList.get("A").getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get("A"), diagramList.get("G"));
+    	int expectedPixelCountInE2 = diagramList.get("B").getPixelCount() + diagramList.get("H").getPixelCount() - countOverlappingPixels(diagramList.get("B"), diagramList.get("H"));
+    	    							
+    	if ( (Math.abs(expectedPixelCountInB - diagramList.get("B").getPixelCount()) < 150
+    			&& Math.abs(expectedPixelCountInE1 - diagramList.get("E").getPixelCount()) < 150)
+    		||
+    			(Math.abs(expectedPixelCountInD - diagramList.get("D").getPixelCount()) < 150
+    					&& Math.abs(expectedPixelCountInE2 - diagramList.get("E").getPixelCount()) < 150) ) {
+    	
+    		System.out.println("CASE #5: B = A + C + Overlap(A, C)");
+    		
+    		int lowestDifference = Integer.MAX_VALUE;
+    		
+    		System.out.println("This case uses an equation. Plugging each answer into the equation to find the one that fits the best.");
+    		for (String answerToCheck : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    			    			    			
+    			// H = I + G - overlap(I, G)  [where I is the answer we are checking]
+    			int calculatedSizeOfH = diagramList.get(answerToCheck).getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get(answerToCheck), diagramList.get("G"));
+    			
+    			int difference = Math.abs(diagramList.get("H").getPixelCount() - calculatedSizeOfH);
+    			
+    			System.out.println("Checking figure " + answerToCheck + " with size: " + diagramList.get(answerToCheck).getPixelCount() + ", difference from expected answer: " + difference);
+    			
+    			if (difference < lowestDifference) {
+    				lowestDifference = difference;
+    				answer = answerToCheck;
+    			}
+    		}
+    		
+    		System.out.println("Found the best fit with answer: " + answer);
+    		return answer;    		
     	}
     	
     	// If none of the Project 3 strategies were used
