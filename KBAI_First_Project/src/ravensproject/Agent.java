@@ -488,7 +488,7 @@ public class Agent {
     	// 03: Pattern1 -> Pattern2 -> Pattern3 -> Pattern1 (Working)
     	// 04: One shape changes, other doesn't (Not working, but should be it seems like?)
     	// 05: Hard question (Working)
-    	// 06: Basic, adding and removing shapes (Working)
+    	// 06: Basic, adding and removing shapes (Not Working)
     	// 07: Multiple patterns, like #2, but more complex (Not working)
     	// 08: Shape order like #2, but texture changes (Not working)
     	// 09: Shape order like #2, but also with addition/subtraction of pattern (Not working)
@@ -499,31 +499,21 @@ public class Agent {
     	// Ideas for D:
     	
     	// Problem Set E (Easier?)
-    	// 01: Adding shapes together (Not working, because pixel counting fails)
-    	// 02: Adding shapes together (Working, because of pixel counting and no overlap)
-    	// 03: Adding shapes together, with some overlap (Not working)
-    	// 04: Subtracting shapes (Not working)
-    	// 05: Shapes changing (Working)
-    	// 06: Adding shapes together, in a strange order (Not working)
-    	// 07: Adding and subtracting (Not working) 
-    	// 08: Adding and subtracting (Not working)
-    	// 09: Shapes changing with odd reasoning (Not working)
-    	// 10: Pixel subtraction (Not working)
-    	// 11: Pixels that exist in first two are what the third is (Not working)
-    	// 12: Shape deletion depending on what is in the next frame (Not working)
+    	// 01: Adding shapes together
+    	// 02: Adding shapes together
+    	// 03: Adding shapes together, with some overlap
+    	// 04: Subtracting shapes
+    	// 05: Shapes changing
+    	// 06: Adding shapes together, in a strange order
+    	// 07: Adding and subtracting 
+    	// 08: Adding and subtracting
+    	// 09: Shapes changing with odd reasoning, could work by splitting diagrams in two (Not working)
+    	// 10: Pixel subtraction
+    	// 11: Pixels that exist in first two are what the third is
+    	// 12: Shape deletion depending on what is in the next frame
 
     	// All of the problems in these two problems sets are easily handled by only looking at horizontal relationships. Some 
     	// could use the benefit of looking the diagonal relationship.
-    	
-    	// Ideas for E:
-    	// Most of E seems to deal with adding, subtracting, and taking of difference of shapes.
-    	// 1, 2, 3 would all work by adding the new pixels in H to G. If a pixel exists in H and G don't add it.
-    	// 4 would work by subtracting # of pixels in H from G, but wouldn't get the right answer.
-    	// 6 would work By subtracting unique pixels in G from H
-    	// 7 and 8 work by adding only the unique things in G and H, with some trickery in terms of overlapping
-    	// 9?
-    	// 10 and 11 work by only taking the common pixels in G & H
-    	// 12 would work by subtracting # of pixels in H from G, but wouldn't get the right answer.
     	
     	// Basic Problems
     	// 1 - Star and pentagon are same type of unknown
@@ -531,8 +521,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem E-06"))) return -1;
-    	//if (!( problem.getName().equals("Basic Problem B-12"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem D-02"))) return -1;
 
     	disableMirroring = false;
     	disableSizing = true;
@@ -758,12 +747,13 @@ public class Agent {
 		
 		int expectedCountOne = 0;
 		int expectedCountTwo = 0;
+		int delta = 150;
 		
-    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < 150
-    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < 150)
+    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < delta
+    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < delta)
     		||
-    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
-    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
+    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < delta
+    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < delta) ) {
     	
     		System.out.println("CASE #1: Shapes in A + Shapes in B - Shapes in both");
     		expectedCountOne = diagramList.get("G").getPixelCount() + diagramList.get("H").getPixelCount() - ghOverlap*2;
@@ -771,11 +761,11 @@ public class Agent {
     	}
 	
     	// Case #2: C is just the overlap of A and B
-    	if ( (Math.abs(abOverlap - diagramList.get("C").getPixelCount()) < 150
-    			&& Math.abs(deOverlap - diagramList.get("F").getPixelCount()) < 150)
+    	if ( (Math.abs(abOverlap - diagramList.get("C").getPixelCount()) < delta
+    			&& Math.abs(deOverlap - diagramList.get("F").getPixelCount()) < delta)
     		||
-    			(Math.abs(adOverlap - diagramList.get("G").getPixelCount()) < 150
-    					&& Math.abs(beOverlap - diagramList.get("H").getPixelCount()) < 150) ) {
+    			(Math.abs(adOverlap - diagramList.get("G").getPixelCount()) < delta
+    					&& Math.abs(beOverlap - diagramList.get("H").getPixelCount()) < delta) ) {
     	
     		System.out.println("CASE #2: Shape in C is just overlap of A and B");
     		expectedCountOne = ghOverlap;
@@ -788,11 +778,11 @@ public class Agent {
     	expectedPixelCountInG = diagramList.get("A").getPixelCount() + diagramList.get("D").getPixelCount() - adOverlap;
     	expectedPixelCountInH = diagramList.get("B").getPixelCount() + diagramList.get("E").getPixelCount() - beOverlap;
     							
-    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < 150
-    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < 150)
+    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < delta
+    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < delta)
     		||
-    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
-    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
+    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < delta
+    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < delta) ) {
     	
     		System.out.println("CASE #3: Shapes in A + Shapes in B = C");
     		expectedCountOne = diagramList.get("G").getPixelCount() + diagramList.get("H").getPixelCount() - ghOverlap;
@@ -805,11 +795,11 @@ public class Agent {
     	expectedPixelCountInG = diagramList.get("A").getPixelCount() - diagramList.get("D").getPixelCount();
     	expectedPixelCountInH = diagramList.get("B").getPixelCount() - diagramList.get("E").getPixelCount();
     							
-    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < 150
-    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < 150)
+    	if ( (Math.abs(expectedPixelCountInC - diagramList.get("C").getPixelCount()) < delta
+    			&& Math.abs(expectedPixelCountInF - diagramList.get("F").getPixelCount()) < delta)
     		||
-    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < 150
-    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < 150) ) {
+    			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < delta
+    					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < delta) ) {
     	
     		System.out.println("CASE #4: Shapes in A - Shapes in B = C");
     		expectedCountOne = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
@@ -822,15 +812,14 @@ public class Agent {
     	
     	int expectedPixelCountInB = diagramList.get("A").getPixelCount() + diagramList.get("C").getPixelCount() - countOverlappingPixels(diagramList.get("A"), diagramList.get("C"));
     	int expectedPixelCountInE1 = diagramList.get("D").getPixelCount() + diagramList.get("F").getPixelCount() - countOverlappingPixels(diagramList.get("D"), diagramList.get("F"));
-    	
-    	int expectedPixelCountInD = diagramList.get("A").getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get("A"), diagramList.get("G"));
+     	int expectedPixelCountInD = diagramList.get("A").getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get("A"), diagramList.get("G"));
     	int expectedPixelCountInE2 = diagramList.get("B").getPixelCount() + diagramList.get("H").getPixelCount() - countOverlappingPixels(diagramList.get("B"), diagramList.get("H"));
     	    							
-    	if ( (Math.abs(expectedPixelCountInB - diagramList.get("B").getPixelCount()) < 150
-    			&& Math.abs(expectedPixelCountInE1 - diagramList.get("E").getPixelCount()) < 150)
+    	if ( (Math.abs(expectedPixelCountInB - diagramList.get("B").getPixelCount()) < delta
+    			&& Math.abs(expectedPixelCountInE1 - diagramList.get("E").getPixelCount()) < delta)
     		||
-    			(Math.abs(expectedPixelCountInD - diagramList.get("D").getPixelCount()) < 150
-    					&& Math.abs(expectedPixelCountInE2 - diagramList.get("E").getPixelCount()) < 150) ) {
+    			(Math.abs(expectedPixelCountInD - diagramList.get("D").getPixelCount()) < delta
+    					&& Math.abs(expectedPixelCountInE2 - diagramList.get("E").getPixelCount()) < delta) ) {
     	
     		System.out.println("CASE #5: B = A + C + Overlap(A, C)");
     		
@@ -838,10 +827,11 @@ public class Agent {
     		
     		System.out.println("This case uses an equation. Plugging each answer into the equation to find the one that fits the best.");
     		for (String answerToCheck : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
-    			    			    			
+
+    			// TODO: Only looking at this horizontally, I could also calculate F = C + I - overlap(C, I)
+    			
     			// H = I + G - overlap(I, G)  [where I is the answer we are checking]
     			int calculatedSizeOfH = diagramList.get(answerToCheck).getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get(answerToCheck), diagramList.get("G"));
-    			
     			int difference = Math.abs(diagramList.get("H").getPixelCount() - calculatedSizeOfH);
     			
     			System.out.println("Checking figure " + answerToCheck + " with size: " + diagramList.get(answerToCheck).getPixelCount() + ", difference from expected answer: " + difference);
@@ -1149,6 +1139,29 @@ public class Agent {
     		return countingSolution;
     	}
     	
+    	// TODO: Counting strategy works for 11/12 of the problems in set E
+    	// To solve the problems in Set D I need to try completely different things.
+    	
+    	// Most of these problems involve sequences, so I build up the picture of each diagram which I already have,
+    	// then I really need brand new logic instead of building transformations. Or I need a different method of building transformations.
+    	
+    	// If every problem has the same number of shapes then that is a good hint.
+    	
+    	boolean sameNumberOfShapes = true;
+    	for (String figure : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H")) {
+    		
+    		if (diagramList.get(figure).getShapeList().size() != 1) {
+    			sameNumberOfShapes = false;
+    			break;
+    		}
+    	}
+    	
+    	if (sameNumberOfShapes) {
+    		System.out.println("Same number of shapes");
+    		String answer = seriesDetermination(diagramList);
+    		if (answer != null) return answer;
+    	}
+    	
     	// Build Transformations between A->B and A->C
     	System.out.println();
     	List<Transformation> abTransformations = buildTransformations(diagramList.get("A"), diagramList.get("B"));
@@ -1301,14 +1314,68 @@ public class Agent {
 	    			System.out.println("Updating chosen answer to " + figure + ", with transformation count: " + transformationCount);
 	    		}    		
 	    	}
-			
-			
-			
 		}
     	
     	System.out.println("First Chosen Answer: " + chosenAnswer);
  	
     	return chosenAnswer;
+    }
+    
+    private String seriesDetermination(HashMap<String, Diagram> diagramList) {
+    	
+    	// Each diagram has the same number of shapes
+    	// Which is 1 for the time being
+    	
+    	HashMap<Shapes, Shapes> shapesMapping = new HashMap<Shapes, Shapes>();
+    	
+    	// Does each diagram in a row have a unique shape
+    	if (diagramList.get("A").getShapeList().get(0).getShape() != diagramList.get("B").getShapeList().get(0).getShape()
+    			&& diagramList.get("B").getShapeList().get(0).getShape() != diagramList.get("C").getShapeList().get(0).getShape() ) {
+    		
+    		System.out.println("The shapes in the first row are all different");
+    		
+    	}
+    	
+    	// A - B, B - C, D - E, E - F, G - H
+		
+		shapesMapping.put(diagramList.get("A").getShapeList().get(0).getShape(), diagramList.get("B").getShapeList().get(0).getShape());
+		shapesMapping.put(diagramList.get("B").getShapeList().get(0).getShape(), diagramList.get("C").getShapeList().get(0).getShape());
+		shapesMapping.put(diagramList.get("D").getShapeList().get(0).getShape(), diagramList.get("E").getShapeList().get(0).getShape());
+		shapesMapping.put(diagramList.get("E").getShapeList().get(0).getShape(), diagramList.get("F").getShapeList().get(0).getShape());
+		shapesMapping.put(diagramList.get("G").getShapeList().get(0).getShape(), diagramList.get("H").getShapeList().get(0).getShape());
+    	
+		Shapes expectedShape = null;
+		
+		for (Map.Entry<Shapes, Shapes> entry : shapesMapping.entrySet()) {
+			Shapes key = entry.getKey();
+	    	Shapes value = entry.getValue();
+	    	System.out.println("The shape: " + key + ", turns into the shape: " + value);
+	    	
+	    	if (key.equals(diagramList.get("H").getShapeList().get(0).getShape())) {
+	    		expectedShape = value;
+	    		System.out.println("The shape in H goes to: " + value);
+	    	}
+		}
+    	
+		System.out.println("HERE");
+		
+		// Find the answer based off what 
+		for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+			
+			System.out.println("Answer: " + answer + ", size: " + diagramList.get(answer).getShapeList().size() + ", shape" +
+					diagramList.get(answer).getShapeList().get(0).getShape() + ", texture: " + diagramList.get(answer).getShapeList().get(0).getTexture());
+			
+			if (diagramList.get(answer).getShapeList().size() != 1) continue;
+			
+			if (diagramList.get(answer).getShapeList().get(0).getShape().equals(expectedShape) &&
+					diagramList.get(answer).getShapeList().get(0).getTexture().equals(diagramList.get("H").getShapeList().get(0).getTexture())) {
+				
+				return answer;
+			}
+			
+		}
+		
+    	return null;
     }
     
     // For a diagram, create a new matrix for each shape that has only that single shape on the matrix
