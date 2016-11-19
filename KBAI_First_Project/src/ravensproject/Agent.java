@@ -521,7 +521,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem D-02"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem D-04"))) return -1;
 
     	disableMirroring = false;
     	disableSizing = true;
@@ -1133,12 +1133,6 @@ public class Agent {
     	
     	System.out.println("Determining answer for 3x3 Problem");
     	
-    	// Attempt the counting strategy, if it is valid then use that as the answer
-    	String countingSolution = countingStrategy(diagramList);
-    	if (countingSolution != null) {
-    		return countingSolution;
-    	}
-    	
     	// TODO: Counting strategy works for 11/12 of the problems in set E
     	// To solve the problems in Set D I need to try completely different things.
     	
@@ -1147,19 +1141,45 @@ public class Agent {
     	
     	// If every problem has the same number of shapes then that is a good hint.
     	
-    	boolean sameNumberOfShapes = true;
-    	for (String figure : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H")) {
+    	boolean sameNumberOfShapes = false;
+//    	for (String figure : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H")) {
+//    		
+//    		if (diagramList.get(figure).getShapeList().size() != diagramList.get("A").getShapeList().size()) {
+//    			sameNumberOfShapes = false;
+//    			break;
+//    		}
+//    	}
+    	
+    	// Or if a,b,c each have only one unique shape, and d-e-f only have one unique shape
+    	
+    	int aUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("A"), diagramList.get("B")).size();
+    	int bUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("B"), diagramList.get("C")).size();
+       	int cUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("C"), diagramList.get("B")).size();
+    	int dUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("D"), diagramList.get("E")).size();
+    	int eUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("E"), diagramList.get("F")).size();
+       	int fUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("F"), diagramList.get("E")).size();
+       	int gUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("G"), diagramList.get("H")).size();
+       	int hUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("H"), diagramList.get("G")).size();
+       	
+       	   	
+    	if (aUnique == bUnique && bUnique == cUnique && cUnique == dUnique  && dUnique == eUnique 
+    			&& eUnique == fUnique && fUnique == gUnique && gUnique == hUnique && hUnique == 1) {
     		
-    		if (diagramList.get(figure).getShapeList().size() != 1) {
-    			sameNumberOfShapes = false;
-    			break;
-    		}
+    		System.out.println("All have one unique shape ");
+    		sameNumberOfShapes = true;
     	}
+    	
     	
     	if (sameNumberOfShapes) {
     		System.out.println("Same number of shapes");
     		String answer = seriesDetermination(diagramList);
     		if (answer != null) return answer;
+    	}
+    	
+     	// Attempt the counting strategy, if it is valid then use that as the answer
+    	String countingSolution = countingStrategy(diagramList);
+    	if (countingSolution != null) {
+    		return countingSolution;
     	}
     	
     	// Build Transformations between A->B and A->C
@@ -1321,10 +1341,32 @@ public class Agent {
     	return chosenAnswer;
     }
     
+    private List<Shape> findNumberOfShapeTypesInAThatArentInB(Diagram A, Diagram B) {
+    	
+    	List<Shape> uniqueShapes = new ArrayList<Shape>();
+    	
+    	// for each shape that is in a but not in b
+    	for (Shape aShape : A.getShapeList()) {
+    		
+    		boolean isUnique = true;
+    		
+    		for (Shape bShape : B.getShapeList()) {
+    			
+    			if (aShape.getShape().equals(bShape.getShape())) {
+    				isUnique = false;
+    				break;
+    			}
+    		}
+    		
+    		if (isUnique) uniqueShapes.add(aShape);
+    	}
+    	
+    	return uniqueShapes;
+    }
+    
     private String seriesDetermination(HashMap<String, Diagram> diagramList) {
     	
-    	// Each diagram has the same number of shapes
-    	// Which is 1 for the time being
+    	// Each diagram only has one unique shape (compared to the diagram in front of it, or behind it in the case of C and F and G)
     	
     	HashMap<Shapes, Shapes> shapesMapping = new HashMap<Shapes, Shapes>();
     	
@@ -1336,13 +1378,24 @@ public class Agent {
     		
     	}
     	
+    	// TODO: ^ Still need to fix this logic for when we actually want to use this method of answering the problem
+    	
     	// A - B, B - C, D - E, E - F, G - H
 		
-		shapesMapping.put(diagramList.get("A").getShapeList().get(0).getShape(), diagramList.get("B").getShapeList().get(0).getShape());
-		shapesMapping.put(diagramList.get("B").getShapeList().get(0).getShape(), diagramList.get("C").getShapeList().get(0).getShape());
-		shapesMapping.put(diagramList.get("D").getShapeList().get(0).getShape(), diagramList.get("E").getShapeList().get(0).getShape());
-		shapesMapping.put(diagramList.get("E").getShapeList().get(0).getShape(), diagramList.get("F").getShapeList().get(0).getShape());
-		shapesMapping.put(diagramList.get("G").getShapeList().get(0).getShape(), diagramList.get("H").getShapeList().get(0).getShape());
+    	List<Shape> aUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("A"), diagramList.get("B"));
+    	List<Shape> bUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("B"), diagramList.get("C"));
+    	List<Shape> cUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("C"), diagramList.get("B"));
+    	List<Shape> dUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("D"), diagramList.get("E"));
+    	List<Shape> eUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("E"), diagramList.get("F"));
+    	List<Shape> fUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("F"), diagramList.get("E"));
+    	List<Shape> gUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("G"), diagramList.get("H"));
+    	List<Shape> hUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("H"), diagramList.get("G"));
+    	
+		shapesMapping.put(aUniqueShapes.get(0).getShape(), bUniqueShapes.get(0).getShape());
+		shapesMapping.put(bUniqueShapes.get(0).getShape(), cUniqueShapes.get(0).getShape());
+		shapesMapping.put(dUniqueShapes.get(0).getShape(), eUniqueShapes.get(0).getShape());
+		shapesMapping.put(eUniqueShapes.get(0).getShape(), fUniqueShapes.get(0).getShape());
+		shapesMapping.put(gUniqueShapes.get(0).getShape(), hUniqueShapes.get(0).getShape());
     	
 		Shapes expectedShape = null;
 		
@@ -1351,7 +1404,7 @@ public class Agent {
 	    	Shapes value = entry.getValue();
 	    	System.out.println("The shape: " + key + ", turns into the shape: " + value);
 	    	
-	    	if (key.equals(diagramList.get("H").getShapeList().get(0).getShape())) {
+	    	if (key.equals(hUniqueShapes.get(0).getShape())) {
 	    		expectedShape = value;
 	    		System.out.println("The shape in H goes to: " + value);
 	    	}
@@ -1362,17 +1415,29 @@ public class Agent {
 		// Find the answer based off what 
 		for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
 			
-			System.out.println("Answer: " + answer + ", size: " + diagramList.get(answer).getShapeList().size() + ", shape" +
+			System.out.println("Answer: " + answer + ", size: " + diagramList.get(answer).getShapeList().size() + ", shape: " +
 					diagramList.get(answer).getShapeList().get(0).getShape() + ", texture: " + diagramList.get(answer).getShapeList().get(0).getTexture());
 			
-			if (diagramList.get(answer).getShapeList().size() != 1) continue;
+			// Does this answer contain the expected shape
+			boolean containsExpectedShape = false;
 			
-			if (diagramList.get(answer).getShapeList().get(0).getShape().equals(expectedShape) &&
-					diagramList.get(answer).getShapeList().get(0).getTexture().equals(diagramList.get("H").getShapeList().get(0).getTexture())) {
-				
-				return answer;
+			for (Shape shape : diagramList.get(answer).getShapeList()) {
+				if (shape.getShape().equals(expectedShape) &&
+						shape.getTexture().equals(hUniqueShapes.get(0).getTexture())) {
+					
+					containsExpectedShape = true;
+					break;
+				}
 			}
 			
+			// If this answer contains the expected shape and has the same number of shapes as H then select that as the answer
+			
+			if (containsExpectedShape) {
+				System.out.println("The answer: " + answer + " contain the expectedShape.");
+				if (diagramList.get("H").getShapeList().size() == diagramList.get(answer).getShapeList().size()) {
+					return answer;
+				}
+			}			
 		}
 		
     	return null;
