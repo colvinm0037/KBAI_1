@@ -521,7 +521,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem D-04"))) return -1;
+    	// if (!( problem.getName().equals("Basic Problem D-10"))) return -1;
 
     	disableMirroring = false;
     	disableSizing = true;
@@ -724,17 +724,6 @@ public class Agent {
 		int adOverlap = countOverlappingPixels(diagramList.get("A"), diagramList.get("D"));
 		int beOverlap = countOverlappingPixels(diagramList.get("B"), diagramList.get("E"));
 		int cfOverlap = countOverlappingPixels(diagramList.get("C"), diagramList.get("F"));
-		
-		System.out.println("A count: " + diagramList.get("A").getPixelCount());
-		System.out.println("B count: " + diagramList.get("B").getPixelCount());
-		System.out.println("abOverlap: " + abOverlap);
-		System.out.println();
-		System.out.println("G count: " + diagramList.get("G").getPixelCount());
-		System.out.println("H count: " + diagramList.get("H").getPixelCount());
-		System.out.println("ghOverlap: " + ghOverlap);
-		System.out.println("C count: " + diagramList.get("C").getPixelCount());
-		System.out.println("F count: " + diagramList.get("F").getPixelCount());
-		System.out.println("cfOverlap: " + cfOverlap);
 		
 		// Case #1: C is all the shapes in A plus the shapes in B, but with any shapes in both A and B excluded from C
 		// For problem E-7 
@@ -1182,6 +1171,33 @@ public class Agent {
     		return countingSolution;
     	}
     	
+    	System.out.println("Checking three of a kind strategy");
+    	String threeOfAKindSolution = threeOfAKindStrategy(diagramList);
+    	if (threeOfAKindSolution != null) {
+    		return threeOfAKindSolution;
+    	}
+    	
+    	// If the list of answers only has one solution that isn't in the matrix diagram then just use that?
+    	List<Diagram> uniqueDiagrams = new ArrayList<Diagram>();
+    	for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    	
+    		boolean containsAnswer = false;
+        	for (String diagram : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H")) {
+        		if (Math.abs(diagramList.get(answer).getPixelCount() - diagramList.get(diagram).getPixelCount()) < 100) {
+        			containsAnswer = true;
+        			break;
+        		}
+        	}
+        	if (!containsAnswer) uniqueDiagrams.add(diagramList.get(answer));
+    	}
+    	
+    	if (uniqueDiagrams.size() == 1) {
+    		System.out.println("Only found one unique answer for this problem. Using that.");
+    		return uniqueDiagrams.get(0).getName();
+    	}
+    	
+    	System.out.println("Attempting the normal strategy");
+    	
     	// Build Transformations between A->B and A->C
     	System.out.println();
     	List<Transformation> abTransformations = buildTransformations(diagramList.get("A"), diagramList.get("B"));
@@ -1339,6 +1355,73 @@ public class Agent {
     	System.out.println("First Chosen Answer: " + chosenAnswer);
  	
     	return chosenAnswer;
+    }
+    
+    private String threeOfAKindStrategy(HashMap<String, Diagram> diagramList) {
+    	
+    	// If there are three diagrams in the top row, and those three are repeated in the 2nd row, then the third row must also contain all three
+    	
+    	String answer = null;
+    	
+    	// If there are three distinct images in A-B-C, and those three are repeated in D-E-F, and two of them are in G-H, then the remaining
+    	// one must be the answer to I
+    	// This is tricky because identical images usually arent identical
+    	
+    	List<Integer> firstRowCounts = Arrays.asList(diagramList.get("A").getPixelCount(), diagramList.get("B").getPixelCount(), diagramList.get("C").getPixelCount());
+    	List<Diagram> middleRow = Arrays.asList(diagramList.get("D"), diagramList.get("E"), diagramList.get("F"));
+    	boolean containsAllThree = true;
+
+    	for (Integer pixelCount : firstRowCounts) {
+    		System.out.println("Checking if DEF contains: " + pixelCount);
+    		boolean containsThisCount = false;
+	    	for (Diagram diagram : middleRow) {
+	    		if (Math.abs(diagram.getPixelCount() - pixelCount) < 100) {
+	    			containsThisCount = true;
+	    		}
+	    	}
+	    	if (!containsThisCount) containsAllThree = false;
+    	}
+
+    	List<Diagram> matches = new ArrayList<Diagram>();
+    	int missingPixelCount = 0;
+    	
+    	// DEF contains all three of the images in ABC
+    	// Confirm that GH contains 2/3 of the same images, and keep track of the value that's missing
+    	if (containsAllThree) {
+    		// if GH contains 2 of the three then find the remaining one
+    		for (Integer pixelCount : firstRowCounts) {
+    			boolean containsThisCount = false;
+    			for (Diagram diagram : Arrays.asList(diagramList.get("G"), diagramList.get("H"))) {
+    				if (Math.abs(diagram.getPixelCount() - pixelCount) < 100) {
+    	    			matches.add(diagram);
+    	    			containsThisCount = true;
+    	    		} 
+    			}
+    			if (!containsThisCount) missingPixelCount = pixelCount;
+    		}
+    	}
+    	
+    	for (Diagram d : matches) System.out.println(d.getName() + ", " + d.getPixelCount());
+    	
+    	int difference = Integer.MAX_VALUE;
+    	    	
+    	if (matches.size() == 2) {
+    	
+    		System.out.println("Contains all three, has two matches, missingPixelCount: " + missingPixelCount);
+    		
+    		// Find the answer with the closest pixel count
+        	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+        		
+        		System.out.println("Pixel Count " + figure + ": " + diagramList.get(figure).getPixelCount());
+        		
+        		if (Math.abs(missingPixelCount - diagramList.get(figure).getPixelCount()) < difference) {
+        			difference = Math.abs(missingPixelCount - diagramList.get(figure).getPixelCount());
+        			answer = figure;
+        		}
+        	}
+    	}
+    	
+    	return answer;
     }
     
     private List<Shape> findNumberOfShapeTypesInAThatArentInB(Diagram A, Diagram B) {
