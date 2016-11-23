@@ -521,7 +521,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	// if (!( problem.getName().equals("Basic Problem D-10"))) return -1;
+    	// if (!( problem.getName().equals("Basic Problem D-12"))) return -1;
 
     	disableMirroring = false;
     	disableSizing = true;
@@ -1131,13 +1131,6 @@ public class Agent {
     	// If every problem has the same number of shapes then that is a good hint.
     	
     	boolean sameNumberOfShapes = false;
-//    	for (String figure : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H")) {
-//    		
-//    		if (diagramList.get(figure).getShapeList().size() != diagramList.get("A").getShapeList().size()) {
-//    			sameNumberOfShapes = false;
-//    			break;
-//    		}
-//    	}
     	
     	// Or if a,b,c each have only one unique shape, and d-e-f only have one unique shape
     	
@@ -1149,20 +1142,25 @@ public class Agent {
        	int fUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("F"), diagramList.get("E")).size();
        	int gUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("G"), diagramList.get("H")).size();
        	int hUnique = findNumberOfShapeTypesInAThatArentInB(diagramList.get("H"), diagramList.get("G")).size();
-       	
        	   	
     	if (aUnique == bUnique && bUnique == cUnique && cUnique == dUnique  && dUnique == eUnique 
     			&& eUnique == fUnique && fUnique == gUnique && gUnique == hUnique && hUnique == 1) {
     		
     		System.out.println("All have one unique shape ");
     		sameNumberOfShapes = true;
-    	}
-    	
+    	}    	
     	
     	if (sameNumberOfShapes) {
     		System.out.println("Same number of shapes");
     		String answer = seriesDetermination(diagramList);
     		if (answer != null) return answer;
+    	}
+    	
+       	// Counting solution
+    	System.out.println("Checking shape counting strategy");
+    	String shapeCountingSolution = shapeCountingStrategy(diagramList);
+    	if (shapeCountingSolution != null) {
+    		return shapeCountingSolution;
     	}
     	
      	// Attempt the counting strategy, if it is valid then use that as the answer
@@ -1357,6 +1355,112 @@ public class Agent {
     	return chosenAnswer;
     }
     
+    private String shapeCountingStrategy(HashMap<String, Diagram> diagramList) {
+    	
+    	String answer = null;
+    	
+    	boolean onlyOneTypeOfShapeInEachDiagram = true;
+    	HashSet<Shapes> shapesFound = new HashSet<Shapes>();
+    	for (String name : Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H")) {
+    		
+    		if (diagramList.get(name).getShapeList().size() == 0) {
+    			System.out.println("No shapes in this diagram");
+    			return null;
+    		}
+    		
+    		boolean sameShapes = true;
+    		Shape initialShape = diagramList.get(name).getShapeList().get(0);
+    		
+    		System.out.println("Diagram: " + name + ", initialShape: " + initialShape.getShape());
+    		for (Shape shape : diagramList.get(name).getShapeList()) {
+    			shapesFound.add(shape.getShape());
+    			if (shape.getShape() != initialShape.getShape()) {
+    				
+    				System.out.println(shape.getShape() + " != " + initialShape.getShape());
+    				
+    				sameShapes = false;
+    				break;
+    			}
+    		}
+    		
+    		if (!sameShapes) {
+    			onlyOneTypeOfShapeInEachDiagram = false;
+    			break;
+    		}
+    	}
+    	
+    	System.out.println("OnlyOneTypeOfShapeInEachDiagram: " + onlyOneTypeOfShapeInEachDiagram);
+    	System.out.println("NumberOfShapesFound: " + shapesFound.size());
+    	
+    	if (!onlyOneTypeOfShapeInEachDiagram) return answer;
+    	if (shapesFound.size() != 3) return answer;
+    	
+    	// Can we figure out how many shapes should exist
+    	HashSet<Integer> firstRowCounts = new HashSet<Integer>();
+    	HashSet<Integer> secondRowCounts = new HashSet<Integer>();
+    	HashSet<Integer> thirdRowCounts = new HashSet<Integer>();
+    	
+    	for (String name : Arrays.asList("A", "B", "C")) firstRowCounts.add(diagramList.get(name).getShapeList().size());
+    	for (String name : Arrays.asList("D", "E", "F")) secondRowCounts.add(diagramList.get(name).getShapeList().size());
+    	for (String name : Arrays.asList("G", "H")) thirdRowCounts.add(diagramList.get(name).getShapeList().size());
+    	
+    	// Confirm that the each diagram in the first row has a different number of shapes, and the 2nd row also has diagrams with a matching
+    	// number of shapes
+    	if (firstRowCounts.size() != 3 || secondRowCounts.size() != 3) return answer;
+    	if (!firstRowCounts.equals(secondRowCounts)) return answer;
+
+    	// If the third row contains two of these values then we can figure out how many shapes should be in I
+    	int missingNumberOfShapes = 0;
+    	int matches = 0;
+    	for (Integer numberOfShapes : firstRowCounts) {
+    		if (thirdRowCounts.contains(numberOfShapes)) {
+    			matches++;
+    		} else {
+    			missingNumberOfShapes = numberOfShapes;
+    		}	
+    	}
+    	
+    	if (matches != 2) return answer;
+    	
+    	// We can also figure out what shape type I should be
+    	Shapes missingShape = null;
+    	for (Shapes shapes : shapesFound) {
+    		
+    		boolean shapeFound = false;
+    		if (diagramList.get("G").getShapeList().get(0).getShape() == shapes
+    				|| diagramList.get("H").getShapeList().get(0).getShape() == shapes) {
+    			shapeFound = true;
+    		}
+    		
+    		if (!shapeFound) {
+    			missingShape = shapes;
+    			break;
+    		}
+    	}
+    	
+    	// Find the solution that has the expected number of shapes and where the shapes are the right type of shape
+    	System.out.println("Looking for diagram with " + missingNumberOfShapes + " shapes of type " + missingShape);
+    	
+    	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+    		
+    		if (diagramList.get(figure).getShapeList().size() != missingNumberOfShapes) continue;
+    		
+    		boolean allShapesCorrectType = true;
+    		for (Shape shape : diagramList.get(figure).getShapeList()) {
+    			if (shape.getShape() != missingShape) {
+    				allShapesCorrectType = false;
+    			}
+    		}
+    		
+    		if (allShapesCorrectType) {
+    			answer = figure;
+    			break;
+    		}
+    	}
+    	
+    	return answer;
+    }
+    
     private String threeOfAKindStrategy(HashMap<String, Diagram> diagramList) {
     	
     	// If there are three diagrams in the top row, and those three are repeated in the 2nd row, then the third row must also contain all three
@@ -1457,8 +1561,7 @@ public class Agent {
     	if (diagramList.get("A").getShapeList().get(0).getShape() != diagramList.get("B").getShapeList().get(0).getShape()
     			&& diagramList.get("B").getShapeList().get(0).getShape() != diagramList.get("C").getShapeList().get(0).getShape() ) {
     		
-    		System.out.println("The shapes in the first row are all different");
-    		
+    		System.out.println("The shapes in the first row are all different"); 		
     	}
     	
     	// TODO: ^ Still need to fix this logic for when we actually want to use this method of answering the problem
@@ -1492,9 +1595,7 @@ public class Agent {
 	    		System.out.println("The shape in H goes to: " + value);
 	    	}
 		}
-    	
-		System.out.println("HERE");
-		
+    			
 		// Find the answer based off what 
 		for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
 			
@@ -2144,7 +2245,7 @@ public class Agent {
 				return true;
 			} else  if (isPlusSign && !isMirroredPlus){
 				System.out.println("Shape is PACMAN with Zero rotation");
-				shape.setShape(Shapes.PACMAN);
+				shape.setShape(Shapes.PLUS); // TODO: I CHANGED THIS FROM PACMAN TO PLUS
 				return true;
 			}
 			
