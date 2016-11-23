@@ -521,7 +521,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	// if (!( problem.getName().equals("Basic Problem D-12"))) return -1;
+    	//if (!( problem.getName().equals("Basic Problem D-08"))) return -1;
 
     	disableMirroring = false;
     	disableSizing = true;
@@ -1394,36 +1394,10 @@ public class Agent {
     	
     	if (!onlyOneTypeOfShapeInEachDiagram) return answer;
     	if (shapesFound.size() != 3) return answer;
-    	
-    	// Can we figure out how many shapes should exist
-    	HashSet<Integer> firstRowCounts = new HashSet<Integer>();
-    	HashSet<Integer> secondRowCounts = new HashSet<Integer>();
-    	HashSet<Integer> thirdRowCounts = new HashSet<Integer>();
-    	
-    	for (String name : Arrays.asList("A", "B", "C")) firstRowCounts.add(diagramList.get(name).getShapeList().size());
-    	for (String name : Arrays.asList("D", "E", "F")) secondRowCounts.add(diagramList.get(name).getShapeList().size());
-    	for (String name : Arrays.asList("G", "H")) thirdRowCounts.add(diagramList.get(name).getShapeList().size());
-    	
-    	// Confirm that the each diagram in the first row has a different number of shapes, and the 2nd row also has diagrams with a matching
-    	// number of shapes
-    	if (firstRowCounts.size() != 3 || secondRowCounts.size() != 3) return answer;
-    	if (!firstRowCounts.equals(secondRowCounts)) return answer;
 
-    	// If the third row contains two of these values then we can figure out how many shapes should be in I
-    	int missingNumberOfShapes = 0;
-    	int matches = 0;
-    	for (Integer numberOfShapes : firstRowCounts) {
-    		if (thirdRowCounts.contains(numberOfShapes)) {
-    			matches++;
-    		} else {
-    			missingNumberOfShapes = numberOfShapes;
-    		}	
-    	}
-    	
-    	if (matches != 2) return answer;
-    	
     	// We can also figure out what shape type I should be
     	Shapes missingShape = null;
+    	Textures missingTexture = null;
     	for (Shapes shapes : shapesFound) {
     		
     		boolean shapeFound = false;
@@ -1438,8 +1412,93 @@ public class Agent {
     		}
     	}
     	
+    	System.out.println("Missing shape is " + missingShape);
+    	
+    	// Can we figure out how many shapes should exist
+    	HashSet<Integer> firstRowCounts = new HashSet<Integer>();
+    	HashSet<Integer> secondRowCounts = new HashSet<Integer>();
+    	HashSet<Integer> thirdRowCounts = new HashSet<Integer>();
+    	
+    	for (String name : Arrays.asList("A", "B", "C")) firstRowCounts.add(diagramList.get(name).getShapeList().size());
+    	for (String name : Arrays.asList("D", "E", "F")) secondRowCounts.add(diagramList.get(name).getShapeList().size());
+    	for (String name : Arrays.asList("G", "H")) thirdRowCounts.add(diagramList.get(name).getShapeList().size());
+    	
+    	// Confirm that the each diagram in the first row has a different number of shapes, and the 2nd row also has diagrams with a matching
+    	// number of shapes
+    	if (!firstRowCounts.equals(secondRowCounts)) return answer;
+
+    	int missingNumberOfShapes = 0;
+    	if (firstRowCounts.size() == 3) {
+
+    		// If the third row contains two of these values then we can figure out how many shapes should be in I
+        	int matches = 0;
+        	for (Integer numberOfShapes : firstRowCounts) {
+        		if (thirdRowCounts.contains(numberOfShapes)) {
+        			matches++;
+        		} else {
+        			missingNumberOfShapes = numberOfShapes;
+        		}	
+        	}
+        	
+        	if (matches != 2) return answer;
+    	
+    	} else if (firstRowCounts.size() == 2) {
+    		
+    		// Problem D-08
+    		// TODO: This code is pretty hacky and poorly documented, but gets the job done.
+    		
+    		int doubleCount = 0;
+    		int singleCount = 0;
+    		
+    		// There are only two counts, find the one that is doubled 
+    		if (diagramList.get("A").getShapeList().size() == diagramList.get("B").getShapeList().size()) {
+    			doubleCount = diagramList.get("A").getShapeList().size();
+    			singleCount = diagramList.get("C").getShapeList().size();
+    		} else if (diagramList.get("B").getShapeList().size() == diagramList.get("C").getShapeList().size()) {
+    			doubleCount = diagramList.get("B").getShapeList().size();
+    			singleCount = diagramList.get("A").getShapeList().size();
+    		} else if (diagramList.get("A").getShapeList().size() == diagramList.get("C").getShapeList().size()) {
+    			doubleCount = diagramList.get("C").getShapeList().size();
+    			singleCount = diagramList.get("B").getShapeList().size();
+    		}
+    		
+    		// doubleCount is the number of shapes the should be repeated
+    		
+    		int count = 0;
+    		for (String figure : Arrays.asList("G", "H")) {
+    			if (diagramList.get(figure).getShapeList().size() == doubleCount) {
+    				count++;
+    			}
+    		}
+    		
+    		if (count == 2) {
+    			missingNumberOfShapes = singleCount;
+    		} else {
+    			missingNumberOfShapes = doubleCount;
+    		}
+    		
+    		// Oh wait, we also need to find the missing texture
+    		if (missingNumberOfShapes == doubleCount) {
+    			if (diagramList.get("G").getShapeList().size() == 1) {
+    				if (diagramList.get("G").getShapeList().get(0).getTexture() == Textures.SOLID) {
+    					missingTexture = Textures.HOLLOW;
+    				} else {
+    					missingTexture = Textures.SOLID;
+    				}
+    			}
+    			
+    			if (diagramList.get("H").getShapeList().size() == 1) {
+    				if (diagramList.get("H").getShapeList().get(0).getTexture() == Textures.SOLID) {
+    					missingTexture = Textures.HOLLOW;
+    				} else {
+    					missingTexture = Textures.SOLID;
+    				}
+    			}
+    		}
+    	}    
+    	
     	// Find the solution that has the expected number of shapes and where the shapes are the right type of shape
-    	System.out.println("Looking for diagram with " + missingNumberOfShapes + " shapes of type " + missingShape);
+    	System.out.println("Looking for diagram with " + missingNumberOfShapes + " shapes of type " + missingShape + " and missingTexture: " + missingTexture);
     	
     	for (String figure : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
     		
@@ -1448,6 +1507,9 @@ public class Agent {
     		boolean allShapesCorrectType = true;
     		for (Shape shape : diagramList.get(figure).getShapeList()) {
     			if (shape.getShape() != missingShape) {
+    				allShapesCorrectType = false;
+    			}
+    			if (missingTexture != null && missingTexture != shape.getTexture()) {
     				allShapesCorrectType = false;
     			}
     		}
@@ -2480,7 +2542,7 @@ public class Agent {
     	} else if (shape.getShape() == Shapes.TRIANGLE) {
     		expectedPixelCount = (int) (shape.getHeight() * shape.getWidth() * .5);
     	} else if (shape.getShape() == Shapes.DIAMOND) {
-    		expectedPixelCount = (int) (shape.getWidth() * shape.getWidth() * .5);
+    		expectedPixelCount = (int) ( (shape.getWidth() + 2) * (shape.getWidth() + 2) * .5);
     	} else if (shape.getShape() == Shapes.PLUS) {
     		
     		int edgeWidth = 0;
@@ -2502,6 +2564,7 @@ public class Agent {
     	
     	boolean isSolid = pixelCount >= expectedPixelCount - areaDelta; 
     	//System.out.println("PixelCount: " + pixelCount + ", expectedPixelCount: " + expectedPixelCount);
+    	//printEdgePixels(shape);
     	return isSolid;
     }
     
