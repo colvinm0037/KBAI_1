@@ -749,19 +749,7 @@ public class Agent {
     		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap*2;    		
     	}
 	
-    	// Case #2: C is just the overlap of A and B
-    	if ( (Math.abs(abOverlap - diagramList.get("C").getPixelCount()) < delta
-    			&& Math.abs(deOverlap - diagramList.get("F").getPixelCount()) < delta)
-    		||
-    			(Math.abs(adOverlap - diagramList.get("G").getPixelCount()) < delta
-    					&& Math.abs(beOverlap - diagramList.get("H").getPixelCount()) < delta) ) {
-    	
-    		System.out.println("CASE #2: Shape in C is just overlap of A and B");
-    		expectedCountOne = ghOverlap;
-    		expectedCountTwo = cfOverlap;    		
-    	}
-
-    	// Case #3: C is the stuff in A + B, but remember not to count overlap twice
+    	// Case #2: C is the stuff in A + B, but remember not to count overlap twice
     	expectedPixelCountInC = diagramList.get("A").getPixelCount() + diagramList.get("B").getPixelCount() - abOverlap;
     	expectedPixelCountInF = diagramList.get("D").getPixelCount() + diagramList.get("E").getPixelCount() - deOverlap;
     	expectedPixelCountInG = diagramList.get("A").getPixelCount() + diagramList.get("D").getPixelCount() - adOverlap;
@@ -773,12 +761,12 @@ public class Agent {
     			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < delta
     					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < delta) ) {
     	
-    		System.out.println("CASE #3: Shapes in A + Shapes in B = C");
+    		System.out.println("CASE #2: Shapes in A + Shapes in B = C");
     		expectedCountOne = diagramList.get("G").getPixelCount() + diagramList.get("H").getPixelCount() - ghOverlap;
     		expectedCountTwo = diagramList.get("C").getPixelCount() + diagramList.get("F").getPixelCount() - cfOverlap;    		
     	}
     	
-    	// Case #4: C is the stuff in A minus the stuff in B
+    	// Case #3: C is the stuff in A minus the stuff in B
     	expectedPixelCountInC = diagramList.get("A").getPixelCount() - diagramList.get("B").getPixelCount();
     	expectedPixelCountInF = diagramList.get("D").getPixelCount() - diagramList.get("E").getPixelCount();
     	expectedPixelCountInG = diagramList.get("A").getPixelCount() - diagramList.get("D").getPixelCount();
@@ -790,12 +778,12 @@ public class Agent {
     			(Math.abs(expectedPixelCountInG - diagramList.get("G").getPixelCount()) < delta
     					&& Math.abs(expectedPixelCountInH - diagramList.get("H").getPixelCount()) < delta) ) {
     	
-    		System.out.println("CASE #4: Shapes in A - Shapes in B = C");
+    		System.out.println("CASE #3: Shapes in A - Shapes in B = C");
     		expectedCountOne = diagramList.get("G").getPixelCount() - diagramList.get("H").getPixelCount();
     		expectedCountTwo = diagramList.get("C").getPixelCount() - diagramList.get("F").getPixelCount();    		
     	}
     	
-    	// Case #5: B = C + A - Overlap(A, C)
+    	// Case #4: B = C + A - Overlap(A, C)
     	// For this case, we can't write C as a function of A and B. Instead we have an equation, and we can try plugging in each
     	// of the available answers until we find the one that fits.
     	
@@ -810,19 +798,29 @@ public class Agent {
     			(Math.abs(expectedPixelCountInD - diagramList.get("D").getPixelCount()) < delta
     					&& Math.abs(expectedPixelCountInE2 - diagramList.get("E").getPixelCount()) < delta) ) {
     	
-    		System.out.println("CASE #5: B = A + C + Overlap(A, C)");
+    		System.out.println("CASE #4: B = A + C + Overlap(A, C)");
     		
     		int lowestDifference = Integer.MAX_VALUE;
     		
     		System.out.println("This case uses an equation. Plugging each answer into the equation to find the one that fits the best.");
     		for (String answerToCheck : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
 
-    			// TODO: Only looking at this horizontally, I could also calculate F = C + I - overlap(C, I)
-    			
     			// H = I + G - overlap(I, G)  [where I is the answer we are checking]
-    			int calculatedSizeOfH = diagramList.get(answerToCheck).getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get(answerToCheck), diagramList.get("G"));
-    			int difference = Math.abs(diagramList.get("H").getPixelCount() - calculatedSizeOfH);
+    			int calculatedSizeOfH1 = diagramList.get(answerToCheck).getPixelCount() + diagramList.get("G").getPixelCount() - countOverlappingPixels(diagramList.get(answerToCheck), diagramList.get("G"));
+    			int difference = Math.abs(diagramList.get("H").getPixelCount() - calculatedSizeOfH1);
+    			System.out.println("Checking figure " + answerToCheck + " with size: " + diagramList.get(answerToCheck).getPixelCount() + ", difference from expected answer: " + difference);
     			
+    			if (difference < lowestDifference) {
+    				lowestDifference = difference;
+    				answer = answerToCheck;
+    			}
+    		}
+    		
+       		for (String answerToCheck : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
+
+       			// F = I + C - overlap(C, I)
+    			int calculatedSizeOfH2 = diagramList.get(answerToCheck).getPixelCount() + diagramList.get("C").getPixelCount() - countOverlappingPixels(diagramList.get(answerToCheck), diagramList.get("C"));
+    			int difference = Math.abs(diagramList.get("H").getPixelCount() - calculatedSizeOfH2);
     			System.out.println("Checking figure " + answerToCheck + " with size: " + diagramList.get(answerToCheck).getPixelCount() + ", difference from expected answer: " + difference);
     			
     			if (difference < lowestDifference) {
@@ -844,17 +842,20 @@ public class Agent {
 	    	if (diagramList.get("B").getPixelCount() > diagramList.get("A").getPixelCount() 
 	    			&& diagramList.get("C").getPixelCount() > diagramList.get("B").getPixelCount() 
 	    			&& diagramList.get("D").getPixelCount() > diagramList.get("A").getPixelCount()
-	    			&& diagramList.get("G").getPixelCount() > diagramList.get("D").getPixelCount()) {
+	    			&& diagramList.get("G").getPixelCount() > diagramList.get("D").getPixelCount()
+	    			&& diagramList.get("H").getPixelCount() > diagramList.get("G").getPixelCount()
+	    			&& diagramList.get("F").getPixelCount() > diagramList.get("C").getPixelCount()) {
 	    		
 	    		increasing = true;
 	    		System.out.println("Valid scenario, increasing");    	
-	    		
 	    		
 	    	} // If the shapes shrink from left to right and top to bottom
 	    	else if (diagramList.get("B").getPixelCount() < diagramList.get("A").getPixelCount() 
 	    			&& diagramList.get("C").getPixelCount() < diagramList.get("B").getPixelCount() 
 	    			&& diagramList.get("D").getPixelCount() < diagramList.get("A").getPixelCount()
-	    			&& diagramList.get("G").getPixelCount() < diagramList.get("D").getPixelCount()) {
+	    			&& diagramList.get("G").getPixelCount() < diagramList.get("D").getPixelCount()
+	    			&& diagramList.get("H").getPixelCount() < diagramList.get("G").getPixelCount()
+	    			&& diagramList.get("F").getPixelCount() < diagramList.get("C").getPixelCount()) {
 					
 	    		increasing = false;
 				System.out.println("Valid scenario, decreasing");
