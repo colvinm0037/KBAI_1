@@ -521,7 +521,7 @@ public class Agent {
     	// Challenge Problems
     	// 1 - Triangles only work with zero rotation
     	
-    	//if (!( problem.getName().equals("Basic Problem D-08"))) return -1;
+    	// if (!( problem.getName().equals("Basic Problem D-04"))) return -1;
 
     	disableMirroring = false;
     	disableSizing = true;
@@ -1353,6 +1353,8 @@ public class Agent {
     	
     	System.out.println("First Chosen Answer: " + chosenAnswer);
  	
+    	if (transformationCount > 4) return "-1";
+    	
     	return chosenAnswer;
     }
     
@@ -1620,15 +1622,6 @@ public class Agent {
     	
     	HashMap<Shapes, Shapes> shapesMapping = new HashMap<Shapes, Shapes>();
     	
-    	// Does each diagram in a row have a unique shape
-    	if (diagramList.get("A").getShapeList().get(0).getShape() != diagramList.get("B").getShapeList().get(0).getShape()
-    			&& diagramList.get("B").getShapeList().get(0).getShape() != diagramList.get("C").getShapeList().get(0).getShape() ) {
-    		
-    		System.out.println("The shapes in the first row are all different"); 		
-    	}
-    	
-    	// TODO: ^ Still need to fix this logic for when we actually want to use this method of answering the problem
-    	
     	// A - B, B - C, D - E, E - F, G - H
 		
     	List<Shape> aUniqueShapes = findNumberOfShapeTypesInAThatArentInB(diagramList.get("A"), diagramList.get("B"));
@@ -1659,7 +1652,8 @@ public class Agent {
 	    	}
 		}
     			
-		// Find the answer based off what 
+		// Find the answer based off what we've found 
+		List<Diagram> possibleAnswers = new ArrayList<Diagram>();
 		for (String answer : Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8")) {
 			
 			System.out.println("Answer: " + answer + ", size: " + diagramList.get(answer).getShapeList().size() + ", shape: " +
@@ -1678,13 +1672,75 @@ public class Agent {
 			}
 			
 			// If this answer contains the expected shape and has the same number of shapes as H then select that as the answer
-			
 			if (containsExpectedShape) {
 				System.out.println("The answer: " + answer + " contain the expectedShape.");
 				if (diagramList.get("H").getShapeList().size() == diagramList.get(answer).getShapeList().size()) {
-					return answer;
+					possibleAnswers.add(diagramList.get(answer));
 				}
 			}			
+		}
+		
+		if (possibleAnswers.size() == 1) {
+			return possibleAnswers.get(0).getName();
+		} else if (possibleAnswers.size() > 1) {
+			
+			// If each solution has multiple shapes, then the overlapping shape should be the same
+			boolean allContainMultipleShapes = true;
+			for (Diagram d : possibleAnswers) {
+				if (d.getShapeList().size() < 2) allContainMultipleShapes = false;
+			}
+			
+			if (allContainMultipleShapes) {
+				
+				Shapes shapeToMatch = null;
+				
+				for (Shape shape : diagramList.get("G").getShapeList()) {
+					for (Shape shape2 : diagramList.get("H").getShapeList()) {
+						
+						
+						if (shape.getShape().equals(shape2.getShape())) shapeToMatch = shape.getShape();
+					}
+				}
+				
+				System.out.println("The shape to match is: " + shapeToMatch);
+				
+				if (shapeToMatch == null) {
+					System.out.println("Couldn't find a shape to match, just returning the first best option");
+					return possibleAnswers.get(0).getName();
+				}
+				
+				// Otherwise find the answer that also contains this shape
+				for (Diagram d : possibleAnswers) {
+					for (Shape shape : d.getShapeList()) {
+						if (shape.getShape().equals(shapeToMatch)) {
+							System.out.println("Found matching shape, returning this diagram");
+							return d.getName();
+						}
+					}
+				}
+				
+				return possibleAnswers.get(0).getName();
+			}
+			
+			
+			int lowestValue = Integer.MAX_VALUE;
+			String answer = "";
+			
+			for (Diagram d : possibleAnswers) {
+			
+				System.out.println("Potential answer: " + d.getName());
+				
+				// HACKY, find the diagram the overlaps the best with E
+				int value = d.getPixelCount() - countOverlappingPixels(diagramList.get("E"), d);
+				
+				if (value < lowestValue) {
+					lowestValue = value;
+					answer = d.getName();
+				}
+			}
+		
+			return answer;
+			//return possibleAnswers.get(0).getName();
 		}
 		
     	return null;
@@ -2212,7 +2268,7 @@ public class Agent {
     	if (determineIfRectangular(shape)) {}
 		else if (determineIfCircleOrRelated(shape)) {}
     	else if (determineIfTriangle(shape)) {}
-	//	else if (determineIfHeart(shape)) {}
+		else if (determineIfHeart(shape)) {}
 		else {
     		handleUnknownShape(shape);
     	}
@@ -2312,65 +2368,65 @@ public class Agent {
 				return true;
 			}
 			
-			if (rowValue != 0 && columnValue != 0) {
-								
-				boolean foundTopRight = false;
-				boolean foundBottomRight = false;
-				boolean foundBottomLeft = false;
-				int rowStart = 0;
-				int colStart = 0;
-				
-				// Look in the top right region		
-				rowStart = rowValue;
-				colStart = 184 - columnValue;
-				
-				for (int i = 0; i < 10; i++) {
-					if (shape.getShapeMatrix()[colStart][rowStart + i]) {
-						foundTopRight = true;
-					}
-				}
-		
-				// Look at bottom left				
-				rowStart = 184 - rowValue;
-				colStart = columnValue;
-				
-				for (int i = 0; i < 10; i++) {
-					if (shape.getShapeMatrix()[colStart][rowStart - i]) {
-						foundBottomLeft = true;
-					}
-				}
-				
-				// Look at bottom right
-				rowStart = 184 - rowValue;
-				colStart = 184 - columnValue;
-				
-				for (int i = 0; i < 10; i++) {
-					if (shape.getShapeMatrix()[colStart][rowStart - i]) {
-						foundBottomRight = true;
-					}
-				}
-							
-				if (foundTopRight && foundBottomRight && !foundBottomLeft) {
-					System.out.println("Shape is PACMAN with 90 rotation");
-					shape.setShape(Shapes.PACMAN);
-					shape.setRotation(90);
-					return true;
-				}
-				
-				if (foundTopRight && !foundBottomRight && foundBottomLeft) {
-					System.out.println("Shape is PACMAN with 180 rotation");
-					shape.setShape(Shapes.PACMAN);
-					shape.setRotation(180);
-					return true;
-				}
-				
-				if (!foundTopRight && foundBottomRight && foundBottomLeft) {
-					System.out.println("Shape is PACMAN with 270 rotation");
-					shape.setShape(Shapes.PACMAN);
-					shape.setRotation(270);
-					return true;
-				}
-			}
+//			if (rowValue != 0 && columnValue != 0) {
+//								
+//				boolean foundTopRight = false;
+//				boolean foundBottomRight = false;
+//				boolean foundBottomLeft = false;
+//				int rowStart = 0;
+//				int colStart = 0;
+//				
+//				// Look in the top right region		
+//				rowStart = rowValue;
+//				colStart = 184 - columnValue;
+//				
+//				for (int i = 0; i < 10; i++) {
+//					if (shape.getShapeMatrix()[colStart][rowStart + i]) {
+//						foundTopRight = true;
+//					}
+//				}
+//		
+//				// Look at bottom left				
+//				rowStart = 184 - rowValue;
+//				colStart = columnValue;
+//				
+//				for (int i = 0; i < 10; i++) {
+//					if (shape.getShapeMatrix()[colStart][rowStart - i]) {
+//						foundBottomLeft = true;
+//					}
+//				}
+//				
+//				// Look at bottom right
+//				rowStart = 184 - rowValue;
+//				colStart = 184 - columnValue;
+//				
+//				for (int i = 0; i < 10; i++) {
+//					if (shape.getShapeMatrix()[colStart][rowStart - i]) {
+//						foundBottomRight = true;
+//					}
+//				}
+//							
+//				if (foundTopRight && foundBottomRight && !foundBottomLeft) {
+//					System.out.println("Shape is PACMAN with 90 rotation");
+//					shape.setShape(Shapes.PACMAN);
+//					shape.setRotation(90);
+//					return true;
+//				}
+//				
+//				if (foundTopRight && !foundBottomRight && foundBottomLeft) {
+//					System.out.println("Shape is PACMAN with 180 rotation");
+//					shape.setShape(Shapes.PACMAN);
+//					shape.setRotation(180);
+//					return true;
+//				}
+//				
+//				if (!foundTopRight && foundBottomRight && foundBottomLeft) {
+//					System.out.println("Shape is PACMAN with 270 rotation");
+//					shape.setShape(Shapes.PACMAN);
+//					shape.setRotation(270);
+//					return true;
+//				}
+//			}
 			
 			// It might actually be a diamond 
 			int count = 0;
